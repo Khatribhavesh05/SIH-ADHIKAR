@@ -1,26 +1,120 @@
 @import "tailwindcss";
 
+/*
+  Design tokens grounded in UX4G Design System 3.0 (ux4g.gov.in).
+  Brand purple (#4a2bc2 / #1e1465) is UX4G's own published token
+  (--ux4g-text-brand-primary-default). Saffron and green are the two
+  other hues UX4G's own documentation names as its identity family
+  ("Brand Purple, Saffron, Green" — India's national colours), applied
+  here as secondary/tertiary + success base. Semantic red/amber are
+  standard WCAG AA-safe values in that same family.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-paper: #fbfaf8;
+  --color-paper-raised: #ffffff;
+  --color-ink: #17141f;
+  --color-ink-muted: #4a4658;
+  --color-hairline: #d8d4e0;
+  --color-hairline-strong: #b6afc6;
+
+  --color-brand: #4a2bc2;
+  --color-brand-dark: #1e1465;
+  --color-brand-tint: #eeeafb;
+
+  --color-saffron: #ff9933;
+  --color-saffron-tint: #fff3e6;
+
+  --color-green: #138808;
+  --color-green-tint: #e8f5e5;
+
+  --color-success: #1a7431;
+  --color-success-tint: #e6f4e8;
+  --color-warning: #b5560a;
+  --color-warning-tint: #fdf0e2;
+  --color-danger: #b3261e;
+  --color-danger-tint: #fbe9e8;
+  --color-info: #0d5c8a;
+  --color-info-tint: #e6f2f8;
+
+  --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-hairline: var(--color-hairline);
+  --color-hairline-strong: var(--color-hairline-strong);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand: var(--color-brand);
+  --color-brand-dark: var(--color-brand-dark);
+  --color-brand-tint: var(--color-brand-tint);
+
+  --color-saffron: var(--color-saffron);
+  --color-saffron-tint: var(--color-saffron-tint);
+  --color-green: var(--color-green);
+  --color-green-tint: var(--color-green-tint);
+
+  --color-success: var(--color-success);
+  --color-success-tint: var(--color-success-tint);
+  --color-warning: var(--color-warning);
+  --color-warning-tint: var(--color-warning-tint);
+  --color-danger: var(--color-danger);
+  --color-danger-tint: var(--color-danger-tint);
+  --color-info: var(--color-info);
+  --color-info-tint: var(--color-info-tint);
+
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+.font-serif-heading {
+  font-family: var(--font-serif);
+}
+
+.font-mono-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline divider utility — the structural motif used across the app */
+.hairline {
+  border-color: var(--color-hairline);
+}
+.hairline-strong {
+  border-color: var(--color-hairline-strong);
+}
+
+::selection {
+  background: var(--color-brand-tint);
+  color: var(--color-brand-dark);
+}
+
+.input {
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--color-paper-raised);
+  color: var(--color-ink);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-brand);
 }

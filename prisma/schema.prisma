@@ -1,0 +1,307 @@
+// Adhikar — National Land Acquisition & Management System
+// Data model derived from RFCTLARR Act 2013 process research (see DOCS/)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [postgis]
+}
+
+// ---------- Enums ----------
+
+enum UserRole {
+  REQUIRING_BODY
+  COLLECTOR
+  RR_ADMINISTRATOR
+  RR_COMMISSIONER
+  CENTRAL_MINISTRY_VIEWER
+}
+
+enum AcquisitionRoute {
+  RFCTLARR
+  RAILWAY_ACT
+  OTHER
+}
+
+enum ProjectType {
+  GOVERNMENT
+  PRIVATE
+  PPP
+}
+
+enum ProjectStage {
+  STAGE_1_NOTIFICATION
+  STAGE_2_SIA
+  STAGE_3_EXPERT_APPRAISAL
+  STAGE_4_CONSENT
+  STAGE_5_DECLARATION
+  STAGE_6_AWARD
+  STAGE_7_DISBURSEMENT
+  STAGE_8_POSSESSION
+  STAGE_9_RR
+}
+
+enum LandClassification {
+  AGRICULTURAL_MULTI_CROP_IRRIGATED
+  AGRICULTURAL_SINGLE_CROP
+  AGRICULTURAL_UNIRRIGATED
+  NON_AGRICULTURAL
+  BARREN
+  FOREST
+  OTHER
+}
+
+enum AffectedPersonRole {
+  OWNER
+  CO_OWNER
+  AGRICULTURAL_LABORER
+  OTHER_LIVELIHOOD_DEPENDENT
+}
+
+enum NotificationType {
+  PRELIMINARY_S11
+  DECLARATION_S19
+}
+
+enum ExpertGroupOutcome {
+  PENDING
+  APPROVED
+  MODIFIED
+  REJECTED
+}
+
+enum AreaType {
+  RURAL
+  URBAN
+}
+
+enum DisputeStatus {
+  NONE
+  FILED
+  RESOLVED
+}
+
+enum LapseStatus {
+  SAFE
+  AT_RISK
+  LAPSED
+  NOT_APPLICABLE
+}
+
+enum ApprovalStatus {
+  NOT_STARTED
+  DRAFTED
+  PENDING_REVIEW
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum EntitlementType {
+  HOUSING
+  TRANSPORT_ALLOWANCE
+  EMPLOYMENT
+  ANNUITY
+}
+
+enum EntitlementStatus {
+  PENDING
+  APPROVED
+  DISBURSED
+  REJECTED
+}
+
+// ---------- Models ----------
+
+model User {
+  id                  String   @id @default(uuid())
+  authUserId          String   @unique // Supabase auth.users.id
+  email               String   @unique
+  name                String
+  role                UserRole
+  jurisdictionState   String?
+  jurisdictionDistrict String?
+  createdAt           DateTime @default(now())
+
+  projects            Project[] @relation("RequiringBodyUser")
+}
+
+model Project {
+  id               String            @id @default(uuid())
+  title            String
+  requiringBody    String
+  acquisitionRoute AcquisitionRoute  @default(RFCTLARR)
+  projectType      ProjectType       @default(GOVERNMENT)
+  currentStage     ProjectStage      @default(STAGE_1_NOTIFICATION)
+  state            String
+  district         String
+  totalAreaAcres   Decimal           @db.Decimal(12, 2)
+  rrCostDeposited  Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+
+  createdByUserId  String?
+  createdBy        User?             @relation("RequiringBodyUser", fields: [createdByUserId], references: [id])
+
+  parcels          LandParcel[]
+  notifications    Notification[]
+  siaRecords       SIARecord[]
+  consentRecord    ConsentRecord?
+  award            Award?
+  possession       Possession?
+  rrScheme         RRScheme?
+}
+
+model LandParcel {
+  id                     String              @id @default(uuid())
+  projectId              String
+  project                Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  surveyNumber           String
+  khasraNumber           String
+  khataNumber            String
+  village                String
+  tehsil                 String
+  district               String
+  areaAcres              Decimal             @db.Decimal(10, 2)
+  landClassification     LandClassification
+  isMultiCropIrrigated   Boolean             @default(false)
+  latitude               Decimal?            @db.Decimal(9, 6)
+  longitude              Decimal?            @db.Decimal(9, 6)
+  createdAt              DateTime            @default(now())
+
+  affectedPersons        AffectedPerson[]
+}
+
+model AffectedPerson {
+  id                        String             @id @default(uuid())
+  parcelId                  String
+  parcel                    LandParcel         @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  name                      String
+  role                      AffectedPersonRole
+  scStStatus                Boolean            @default(false)
+  ownershipClaimDetails     String?
+  compensationClaimAmount   Decimal?           @db.Decimal(14, 2)
+  createdAt                 DateTime           @default(now())
+
+  disbursements             Disbursement[]
+  entitlements              RREntitlement[]
+}
+
+model Notification {
+  id                        String           @id @default(uuid())
+  projectId                 String
+  project                   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type                      NotificationType
+  publicationDate           DateTime
+  gazetteReference          String
+  newspaperReference        String
+  noticeBoardProofUrl       String?
+  objectionWindowDeadline   DateTime
+  createdAt                 DateTime         @default(now())
+}
+
+model SIARecord {
+  id                       String             @id @default(uuid())
+  projectId                String
+  project                  Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reportDocumentUrl        String?
+  publicHearingSummary     String?
+  expertGroupOutcome       ExpertGroupOutcome @default(PENDING)
+  expertGroupJustification String?
+  isMultiCropFlagged       Boolean            @default(false)
+  createdAt                DateTime           @default(now())
+}
+
+model ConsentRecord {
+  id                    String   @id @default(uuid())
+  projectId             String   @unique
+  project               Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  affectedFamiliesTotal Int
+  consentsCollected     Int      @default(0)
+  thresholdPercent      Decimal  @db.Decimal(5, 2) // 80.00 or 70.00
+  updatedAt             DateTime @updatedAt
+}
+
+model Award {
+  id                       String        @id @default(uuid())
+  projectId                String        @unique
+  project                  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  declarationDate          DateTime
+  awardDeadline            DateTime      // declarationDate + 12 months
+  awardDate                DateTime?
+
+  circleRate               Decimal       @db.Decimal(14, 2) // per acre
+  saleDeedAverage          Decimal       @db.Decimal(14, 2) // per acre
+  assetValue               Decimal       @db.Decimal(14, 2) @default(0)
+  areaType                 AreaType      @default(RURAL)
+
+  marketValue              Decimal       @db.Decimal(16, 2)
+  solatiumAmount           Decimal       @db.Decimal(16, 2)
+  multiplier               Decimal       @db.Decimal(3, 1) // 4.0 rural / 2.0 urban
+  interestAccrued          Decimal       @db.Decimal(16, 2) @default(0)
+  finalCompensationAmount  Decimal       @db.Decimal(16, 2)
+
+  disputeStatus            DisputeStatus @default(NONE)
+
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  disbursements            Disbursement[]
+}
+
+model Disbursement {
+  id                        String          @id @default(uuid())
+  awardId                   String
+  award                     Award           @relation(fields: [awardId], references: [id], onDelete: Cascade)
+  claimantId                String
+  claimant                  AffectedPerson  @relation(fields: [claimantId], references: [id], onDelete: Cascade)
+
+  disbursedAmount           Decimal         @db.Decimal(16, 2)
+  disbursementDate          DateTime?
+  daysDelayedPastAward      Int             @default(0)
+  additionalInterestAccrued Decimal         @db.Decimal(16, 2) @default(0)
+
+  createdAt                 DateTime        @default(now())
+}
+
+model Possession {
+  id                 String      @id @default(uuid())
+  projectId          String      @unique
+  project            Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  possessionDate     DateTime?
+  lapseRiskDeadline  DateTime?   // awardDate + 5 years
+  lapseStatus        LapseStatus @default(NOT_APPLICABLE)
+}
+
+model RRScheme {
+  id                          String         @id @default(uuid())
+  projectId                   String         @unique
+  project                     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  administratorName           String?
+  draftStatus                 ApprovalStatus @default(NOT_STARTED)
+  collectorReviewStatus       ApprovalStatus @default(NOT_STARTED)
+  commissionerApprovalStatus  ApprovalStatus @default(NOT_STARTED)
+  publicationStatus           ApprovalStatus @default(NOT_STARTED)
+  rrCommitteeRequired         Boolean        @default(false)
+  updatedAt                   DateTime       @updatedAt
+
+  entitlements                RREntitlement[]
+}
+
+model RREntitlement {
+  id                String            @id @default(uuid())
+  schemeId          String
+  scheme            RRScheme          @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  personId          String
+  person            AffectedPerson    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  entitlementType   EntitlementType
+  status            EntitlementStatus @default(PENDING)
+  disbursementDate  DateTime?
+}

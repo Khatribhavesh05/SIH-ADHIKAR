@@ -1,0 +1,86 @@
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { projectScopeWhere } from "@/lib/queries/scope";
+import { Panel } from "@/components/ui/Panel";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Table, THead, TH, TR, TD, TEmpty } from "@/components/ui/Table";
+import { formatDate } from "@/lib/domain/format";
+
+const FILE_KINDS: Record<string, string> = {
+  notification: "Notification Proof",
+  sia: "SIA Report",
+  award: "Award Document",
+};
+
+export default async function DocumentsPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const projects = await prisma.project.findMany({
+    where: projectScopeWhere(user.role, user),
+    include: { notifications: true, siaRecords: true, award: true },
+    take: 20,
+    orderBy: { createdAt: "desc" },
+  });
+
+  type Row = { project: string; projectId: string; kind: string; name: string; date: Date | null };
+  const rows: Row[] = [];
+
+  for (const p of projects) {
+    for (const n of p.notifications) {
+      rows.push({
+        project: p.title,
+        projectId: p.id,
+        kind: FILE_KINDS.notification,
+        name: `${n.type === "PRELIMINARY_S11" ? "Preliminary" : "Declaration"} — ${n.gazetteReference}`,
+        date: n.publicationDate,
+      });
+    }
+    for (const s of p.siaRecords) {
+      rows.push({ project: p.title, projectId: p.id, kind: FILE_KINDS.sia, name: "Social Impact Assessment Report", date: null });
+    }
+    if (p.award) {
+      rows.push({ project: p.title, projectId: p.id, kind: FILE_KINDS.award, name: "Award Determination", date: p.award.awardDate });
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-serif-heading text-2xl font-semibold">Documents</h1>
+          <p className="text-sm text-ink-muted mt-1">
+            Notification proofs, SIA reports, and award documents across projects in scope.
+          </p>
+        </div>
+        <Button variant="secondary" disabled title="Prototype — upload is decorative">
+          Upload
+        </Button>
+      </div>
+
+      <Panel raised>
+        <Table>
+          <THead>
+            <TH>Document</TH>
+            <TH>Project</TH>
+            <TH>Type</TH>
+            <TH>Date</TH>
+          </THead>
+          <tbody>
+            {rows.length === 0 && <TEmpty colSpan={4}>No documents on file yet.</TEmpty>}
+            {rows.map((r, i) => (
+              <TR key={i}>
+                <TD>{r.name}</TD>
+                <TD className="text-ink-muted">{r.project}</TD>
+                <TD><Badge tone="brand">{r.kind}</Badge></TD>
+                <TD className="font-mono-data">{formatDate(r.date)}</TD>
+              </TR>
+            ))}
+          </tbody>
+        </Table>
+      </Panel>
+    </div>
+  );
+}
