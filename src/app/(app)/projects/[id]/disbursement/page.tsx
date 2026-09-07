@@ -5,8 +5,12 @@ import { PERMISSIONS } from "@/lib/domain/roles";
 import { Panel } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { formatINR, formatDate } from "@/lib/domain/format";
 import { upsertDisbursement } from "./actions";
+import type { AffectedPerson, Disbursement } from "@prisma/client";
+
+type ClaimantRow = { claimant: AffectedPerson; disbursement: Disbursement | undefined };
 
 export default async function DisbursementPage({
   params,
@@ -38,8 +42,84 @@ export default async function DisbursementPage({
     );
   }
 
-  const claimants = project.parcels.flatMap((p) => p.affectedPersons);
   const award = project.award;
+  const claimants = project.parcels.flatMap((p) => p.affectedPersons);
+  const rows: ClaimantRow[] = claimants.map((claimant) => ({
+    claimant,
+    disbursement: award.disbursements.find((d) => d.claimantId === claimant.id),
+  }));
+
+  const columns: DataColumn<ClaimantRow>[] = [
+    { key: "name", header: "Claimant", primary: true, render: ({ claimant }) => claimant.name },
+    { key: "role", header: "Role", render: ({ claimant }) => <span className="text-ink-muted">{claimant.role}</span> },
+    {
+      key: "amount",
+      header: "Disbursed amount",
+      className: "font-mono-data",
+      render: ({ disbursement: d }) => (d ? formatINR(Number(d.disbursedAmount)) : "—"),
+    },
+    {
+      key: "date",
+      header: "Date",
+      className: "font-mono-data",
+      render: ({ disbursement: d }) => (d ? formatDate(d.disbursementDate) : "—"),
+    },
+    {
+      key: "delay",
+      header: "Days delayed",
+      render: ({ disbursement: d }) =>
+        d && d.daysDelayedPastAward > 0 ? (
+          <Badge tone="danger">{d.daysDelayedPastAward} days</Badge>
+        ) : d ? (
+          <Badge tone="success">On time</Badge>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      key: "interest",
+      header: "Additional interest (9% p.a.)",
+      className: "font-mono-data",
+      render: ({ disbursement: d }) =>
+        d && Number(d.additionalInterestAccrued) > 0 ? formatINR(Number(d.additionalInterestAccrued)) : "—",
+    },
+    ...(canMark
+      ? [
+          {
+            key: "update",
+            header: "Update",
+            render: ({ claimant, disbursement: d }: ClaimantRow) => {
+              const action = upsertDisbursement.bind(null, project.id, award.id, claimant.id);
+              return (
+                <details>
+                  <summary className="text-brand text-xs cursor-pointer hover:underline py-1">
+                    {d ? "Edit" : "Mark disbursed"}
+                  </summary>
+                  <form action={action} className="flex flex-col gap-2 mt-2 w-full sm:w-48">
+                    <input
+                      name="disbursedAmount"
+                      type="number"
+                      step="0.01"
+                      placeholder="Amount"
+                      defaultValue={d ? Number(d.disbursedAmount) : ""}
+                      className="input font-mono-data text-xs"
+                      required
+                    />
+                    <input
+                      name="disbursementDate"
+                      type="date"
+                      defaultValue={d?.disbursementDate?.toISOString().slice(0, 10) ?? ""}
+                      className="input font-mono-data text-xs"
+                    />
+                    <Button type="submit" className="text-xs py-2">Save</Button>
+                  </form>
+                </details>
+              );
+            },
+          } satisfies DataColumn<ClaimantRow>,
+        ]
+      : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,85 +132,12 @@ export default async function DisbursementPage({
       </div>
 
       <Panel raised>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-ink-muted border-b border-hairline">
-                <th className="px-5 py-2.5 font-medium">Claimant</th>
-                <th className="px-5 py-2.5 font-medium">Role</th>
-                <th className="px-5 py-2.5 font-medium">Disbursed amount</th>
-                <th className="px-5 py-2.5 font-medium">Date</th>
-                <th className="px-5 py-2.5 font-medium">Days delayed</th>
-                <th className="px-5 py-2.5 font-medium">Additional interest (9% p.a.)</th>
-                {canMark && <th className="px-5 py-2.5 font-medium">Update</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {claimants.map((claimant) => {
-                const disb = award.disbursements.find((d) => d.claimantId === claimant.id);
-                const action = upsertDisbursement.bind(null, project.id, award.id, claimant.id);
-                return (
-                  <tr key={claimant.id} className="border-b border-hairline last:border-0">
-                    <td className="px-5 py-2.5">{claimant.name}</td>
-                    <td className="px-5 py-2.5 text-ink-muted">{claimant.role}</td>
-                    <td className="px-5 py-2.5 font-mono-data">
-                      {disb ? formatINR(Number(disb.disbursedAmount)) : "—"}
-                    </td>
-                    <td className="px-5 py-2.5 font-mono-data">{disb ? formatDate(disb.disbursementDate) : "—"}</td>
-                    <td className="px-5 py-2.5">
-                      {disb && disb.daysDelayedPastAward > 0 ? (
-                        <Badge tone="danger">{disb.daysDelayedPastAward} days</Badge>
-                      ) : disb ? (
-                        <Badge tone="success">On time</Badge>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-5 py-2.5 font-mono-data">
-                      {disb && Number(disb.additionalInterestAccrued) > 0
-                        ? formatINR(Number(disb.additionalInterestAccrued))
-                        : "—"}
-                    </td>
-                    {canMark && (
-                      <td className="px-5 py-2.5">
-                        <details>
-                          <summary className="text-brand text-xs cursor-pointer hover:underline">
-                            {disb ? "Edit" : "Mark disbursed"}
-                          </summary>
-                          <form action={action} className="flex flex-col gap-2 mt-2 w-48">
-                            <input
-                              name="disbursedAmount"
-                              type="number"
-                              step="0.01"
-                              placeholder="Amount"
-                              defaultValue={disb ? Number(disb.disbursedAmount) : ""}
-                              className="input font-mono-data text-xs"
-                              required
-                            />
-                            <input
-                              name="disbursementDate"
-                              type="date"
-                              defaultValue={disb?.disbursementDate?.toISOString().slice(0, 10) ?? ""}
-                              className="input font-mono-data text-xs"
-                            />
-                            <Button type="submit" className="text-xs py-1">Save</Button>
-                          </form>
-                        </details>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-              {claimants.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-ink-muted text-sm">
-                    No affected persons recorded for this project.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveDataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.claimant.id}
+          emptyMessage="No affected persons recorded for this project."
+        />
       </Panel>
     </div>
   );

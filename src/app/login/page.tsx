@@ -87,7 +87,7 @@ export default function LoginPage() {
         <p className="text-xs font-medium text-ink-muted mb-2">Demo accounts (seed password: {DEMO_PASSWORD})</p>
         <ul className="text-xs text-ink-muted space-y-1 font-mono-data">
           {Object.entries(DEMO_ACCOUNTS).map(([role, email]) => (
-            <li key={email} className="flex justify-between">
+            <li key={email} className="flex flex-wrap justify-between gap-x-2">
               <span>{ROLE_LABELS[role as keyof typeof ROLE_LABELS]}</span>
               <span>{email}</span>
             </li>

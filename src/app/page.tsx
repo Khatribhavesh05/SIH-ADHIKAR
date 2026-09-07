@@ -28,18 +28,19 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col">
       <header className="border-b border-hairline">
-        <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <GovSeal size={36} />
-            <div>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <GovSeal size={32} />
+            <div className="min-w-0">
               <div className="font-serif-heading font-semibold text-sm leading-tight">Adhikar</div>
-              <div className="text-[11px] text-ink-muted leading-tight">
+              <div className="hidden sm:block text-[11px] text-ink-muted leading-tight truncate">
                 National Land Acquisition &amp; Management System
               </div>
             </div>
           </div>
-          <LinkButton href="/login" variant="primary">
-            Login to Dashboard
+          <LinkButton href="/login" variant="primary" className="shrink-0 px-3 sm:px-4 text-xs sm:text-sm min-h-0 py-2">
+            <span className="sm:hidden">Login</span>
+            <span className="hidden sm:inline">Login to Dashboard</span>
           </LinkButton>
         </div>
       </header>
@@ -48,7 +49,7 @@ export default function LandingPage() {
       <section className="border-b border-hairline">
         <div className="mx-auto max-w-6xl px-6 py-16 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h1 className="font-serif-heading text-4xl md:text-5xl font-semibold leading-[1.1] text-ink">
+            <h1 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-semibold leading-[1.1] text-ink">
               A single national record of every land acquisition, from notification to possession.
             </h1>
             <p className="mt-5 text-ink-muted max-w-[60ch] text-[15px] leading-relaxed">
@@ -143,7 +144,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-hairline">
-        <div className="mx-auto max-w-6xl px-6 py-6 text-xs text-ink-muted flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 text-xs text-ink-muted flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <span>Adhikar — SIH26016 Prototype</span>
           <span>Ministry of Rural Development · Department of Land Resources (prototype)</span>
         </div>

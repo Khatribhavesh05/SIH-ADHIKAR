@@ -38,15 +38,15 @@ export function AccountSwitcher({ current }: { current: Role }) {
   }
 
   return (
-    <div className="border border-dashed border-[var(--color-saffron)] bg-[var(--color-saffron-tint)] rounded-[var(--radius-sm)] px-2.5 py-1.5 flex items-center gap-2">
-      <span className="text-[10px] font-medium text-[var(--color-warning)] uppercase tracking-wide">
+    <div className="border border-dashed border-[var(--color-saffron)] bg-[var(--color-saffron-tint)] rounded-[var(--radius-sm)] px-2.5 py-2 sm:py-1.5 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+      <span className="text-[10px] font-medium text-[var(--color-warning)] uppercase tracking-wide whitespace-nowrap">
         Demo: switch account
       </span>
       <select
         value={current}
         disabled={switching !== null}
         onChange={(e) => handleChange(e.target.value as Role)}
-        className="text-xs bg-transparent border-none focus:outline-none text-[var(--color-warning)] font-medium disabled:opacity-60"
+        className="text-xs bg-transparent border-none focus:outline-none text-[var(--color-warning)] font-medium disabled:opacity-60 min-h-[36px] sm:min-h-0"
       >
         {ALL_ROLES.map((r) => (
           <option key={r} value={r}>

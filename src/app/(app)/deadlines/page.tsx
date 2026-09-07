@@ -4,11 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { projectScopeWhere } from "@/lib/queries/scope";
 import { Panel } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
-import { Table, THead, TH, TR, TD, TEmpty } from "@/components/ui/Table";
+import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { formatDate, formatNumber } from "@/lib/domain/format";
 import { computeProjectRisk, type ProjectRiskDeadline } from "@/lib/domain/risk";
 import type { RiskStatus } from "@/lib/domain/compensation";
+import type { Project, Award, Possession } from "@prisma/client";
 import Link from "next/link";
+
+type ProjectRow = Project & { award: Award | null; possession: Possession | null };
+type RowWithRisk = { project: ProjectRow; risk: ReturnType<typeof computeProjectRisk> };
 
 function riskBadge(d: ProjectRiskDeadline | null) {
   if (!d) return <span className="text-ink-muted text-xs">—</span>;
@@ -29,9 +33,44 @@ export default async function DeadlinesPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const rows = projects
+  const rows: RowWithRisk[] = projects
     .map((p) => ({ project: p, risk: computeProjectRisk(p) }))
     .sort((a, b) => STATUS_ORDER[a.risk.overall] - STATUS_ORDER[b.risk.overall]);
+
+  const rowTint = (r: RowWithRisk) =>
+    r.risk.overall === "DANGER"
+      ? "bg-[var(--color-danger-tint)]/40"
+      : r.risk.overall === "WARNING"
+      ? "bg-[var(--color-warning-tint)]/40"
+      : "";
+
+  const columns: DataColumn<RowWithRisk>[] = [
+    {
+      key: "project",
+      header: "Project",
+      primary: true,
+      render: ({ project: p }) => (
+        <Link href={`/projects/${p.id}`} className="text-brand hover:underline font-medium">
+          {p.title}
+        </Link>
+      ),
+    },
+    { key: "location", header: "District / State", render: ({ project: p }) => <span className="text-ink-muted">{p.district}, {p.state}</span> },
+    {
+      key: "awardDeadline",
+      header: "Award deadline",
+      className: "font-mono-data",
+      render: ({ project: p }) => (p.award ? formatDate(p.award.awardDeadline) : "—"),
+    },
+    { key: "awardRisk", header: "Award risk", render: ({ risk }) => riskBadge(risk.award) },
+    {
+      key: "lapseDeadline",
+      header: "Lapse deadline",
+      className: "font-mono-data",
+      render: ({ project: p }) => (p.possession?.lapseRiskDeadline ? formatDate(p.possession.lapseRiskDeadline) : "—"),
+    },
+    { key: "lapseRisk", header: "Lapse risk", render: ({ risk }) => riskBadge(risk.lapse) },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,7 +82,7 @@ export default async function DeadlinesPage() {
         </p>
       </div>
 
-      <Panel className="p-5 bg-[var(--color-warning-tint)] border-[var(--color-warning)]/40">
+      <Panel className="p-4 sm:p-5 bg-[var(--color-warning-tint)] border-[var(--color-warning)]/40">
         <p className="text-sm text-ink">
           <strong>Missed deadlines carry real, audited cost.</strong> A 2026 CAG performance audit
           (Report No. 7 of 2026) found delays in issuing the Bangalore Metro&rsquo;s Final Notification
@@ -53,44 +92,13 @@ export default async function DeadlinesPage() {
       </Panel>
 
       <Panel raised>
-        <Table>
-          <THead>
-            <TH>Project</TH>
-            <TH>District / State</TH>
-            <TH>Award deadline</TH>
-            <TH>Award risk</TH>
-            <TH>Lapse deadline</TH>
-            <TH>Lapse risk</TH>
-          </THead>
-          <tbody>
-            {rows.map(({ project: p, risk }) => (
-              <TR
-                key={p.id}
-                className={
-                  risk.overall === "DANGER"
-                    ? "bg-[var(--color-danger-tint)]/40"
-                    : risk.overall === "WARNING"
-                    ? "bg-[var(--color-warning-tint)]/40"
-                    : ""
-                }
-              >
-                <TD>
-                  <Link href={`/projects/${p.id}`} className="text-brand hover:underline font-medium">
-                    {p.title}
-                  </Link>
-                </TD>
-                <TD className="text-ink-muted">{p.district}, {p.state}</TD>
-                <TD className="font-mono-data">{p.award ? formatDate(p.award.awardDeadline) : "—"}</TD>
-                <TD>{riskBadge(risk.award)}</TD>
-                <TD className="font-mono-data">
-                  {p.possession?.lapseRiskDeadline ? formatDate(p.possession.lapseRiskDeadline) : "—"}
-                </TD>
-                <TD>{riskBadge(risk.lapse)}</TD>
-              </TR>
-            ))}
-            {rows.length === 0 && <TEmpty colSpan={6}>No projects in scope yet.</TEmpty>}
-          </tbody>
-        </Table>
+        <ResponsiveDataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.project.id}
+          rowClassName={rowTint}
+          emptyMessage="No projects in scope yet."
+        />
       </Panel>
       <p className="text-xs text-ink-muted">
         Showing {formatNumber(rows.length)} project(s) in scope, sorted by risk.

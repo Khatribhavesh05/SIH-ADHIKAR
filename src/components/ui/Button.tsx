@@ -19,7 +19,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border rounded-[var(--radius-sm)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] text-sm font-medium border rounded-[var(--radius-sm)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
       {...props}
     />
   );
@@ -39,7 +39,7 @@ export function LinkButton({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border rounded-[var(--radius-sm)] transition-colors ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] text-sm font-medium border rounded-[var(--radius-sm)] transition-colors ${VARIANTS[variant]} ${className}`}
     >
       {children}
     </Link>

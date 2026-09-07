@@ -30,7 +30,7 @@ export default async function NewProjectPage() {
             <input name="requiringBody" required className="input" placeholder="National Highways Authority of India" />
           </Field>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Acquisition route">
               <select name="acquisitionRoute" className="input" defaultValue="RFCTLARR">
                 <option value="RFCTLARR">RFCTLARR</option>
@@ -47,7 +47,7 @@ export default async function NewProjectPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="State">
               <select name="state" required className="input" defaultValue="">
                 <option value="" disabled>Select state</option>

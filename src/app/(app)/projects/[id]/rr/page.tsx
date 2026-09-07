@@ -66,7 +66,7 @@ export default async function RRPage({
                     <button
                       key={opt}
                       formAction={updateRRStatus.bind(null, id, s.key, opt as never)}
-                      className="text-xs text-left px-2 py-1 border border-hairline-strong rounded-[var(--radius-sm)] hover:border-brand hover:text-brand"
+                      className="text-xs text-left px-3 py-2.5 border border-hairline-strong rounded-[var(--radius-sm)] hover:border-brand hover:text-brand"
                     >
                       Set: {opt.replaceAll("_", " ")}
                     </button>

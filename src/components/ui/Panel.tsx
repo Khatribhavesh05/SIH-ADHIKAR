@@ -21,7 +21,7 @@ export function PanelHeader({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`px-5 py-4 border-b border-hairline ${className}`}
+      className={`px-4 sm:px-5 py-3 sm:py-4 border-b border-hairline ${className}`}
       {...props}
     />
   );
@@ -31,5 +31,5 @@ export function PanelBody({
   className = "",
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`px-5 py-4 ${className}`} {...props} />;
+  return <div className={`px-4 sm:px-5 py-3 sm:py-4 ${className}`} {...props} />;
 }

@@ -41,15 +41,15 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-serif-heading text-2xl font-semibold">{project.title}</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-serif-heading text-xl sm:text-2xl font-semibold break-words">{project.title}</h1>
           <p className="text-sm text-ink-muted mt-1">
             {project.requiringBody} · {project.district}, {project.state} ·{" "}
             {formatNumber(Number(project.totalAreaAcres))} acres
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Badge tone="brand">{project.acquisitionRoute}</Badge>
           <Badge tone="neutral">{project.projectType}</Badge>
         </div>
@@ -61,10 +61,10 @@ export default async function ProjectDetailPage({
 
       <div className="grid md:grid-cols-2 gap-4">
         <Panel raised>
-          <PanelHeader className="flex items-center justify-between">
+          <PanelHeader className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-medium text-sm">Notification (Stage 1 / 5)</h2>
             {perm.submitNotification && (
-              <LinkButton href={`/projects/${project.id}/notification`} variant="secondary" className="text-xs px-2.5 py-1">
+              <LinkButton href={`/projects/${project.id}/notification`} variant="secondary" className="text-xs px-2.5 py-1 min-h-0">
                 Submit
               </LinkButton>
             )}
@@ -86,10 +86,10 @@ export default async function ProjectDetailPage({
         </Panel>
 
         <Panel raised>
-          <PanelHeader className="flex items-center justify-between">
+          <PanelHeader className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-medium text-sm">Parcels &amp; Affected Persons (Stage 5)</h2>
             {perm.manageParcels && (
-              <LinkButton href={`/projects/${project.id}/parcels`} variant="secondary" className="text-xs px-2.5 py-1">
+              <LinkButton href={`/projects/${project.id}/parcels`} variant="secondary" className="text-xs px-2.5 py-1 min-h-0">
                 Manage
               </LinkButton>
             )}
@@ -109,10 +109,10 @@ export default async function ProjectDetailPage({
         </Panel>
 
         <Panel raised>
-          <PanelHeader className="flex items-center justify-between">
+          <PanelHeader className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-medium text-sm">Award &amp; Compensation (Stage 6)</h2>
             {perm.compensationCalculator !== "none" && (
-              <LinkButton href={`/projects/${project.id}/compensation`} variant="secondary" className="text-xs px-2.5 py-1">
+              <LinkButton href={`/projects/${project.id}/compensation`} variant="secondary" className="text-xs px-2.5 py-1 min-h-0">
                 {perm.compensationCalculator === "edit" ? "Open Calculator" : "View"}
               </LinkButton>
             )}
@@ -138,9 +138,9 @@ export default async function ProjectDetailPage({
         </Panel>
 
         <Panel raised>
-          <PanelHeader className="flex items-center justify-between">
+          <PanelHeader className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-medium text-sm">Disbursement &amp; Possession</h2>
-            <LinkButton href={`/projects/${project.id}/disbursement`} variant="secondary" className="text-xs px-2.5 py-1">
+            <LinkButton href={`/projects/${project.id}/disbursement`} variant="secondary" className="text-xs px-2.5 py-1 min-h-0">
               View
             </LinkButton>
           </PanelHeader>
@@ -151,9 +151,9 @@ export default async function ProjectDetailPage({
         </Panel>
 
         <Panel raised>
-          <PanelHeader className="flex items-center justify-between">
+          <PanelHeader className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-medium text-sm">R&amp;R Scheme (Stage 9)</h2>
-            <LinkButton href={`/projects/${project.id}/rr`} variant="secondary" className="text-xs px-2.5 py-1">
+            <LinkButton href={`/projects/${project.id}/rr`} variant="secondary" className="text-xs px-2.5 py-1 min-h-0">
               View
             </LinkButton>
           </PanelHeader>

@@ -57,7 +57,7 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
           <input type="hidden" name="notificationDate" value={initial.notificationDate} />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Circle rate (₹/acre)">
             <input
               className="input font-mono-data"
@@ -107,7 +107,7 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
           </select>
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Declaration date (S.19)">
             <input
               className="input font-mono-data"
@@ -133,7 +133,7 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
 
         {deadline && (
           <div
-            className={`border rounded-[var(--radius-sm)] p-4 flex items-center justify-between ${
+            className={`border rounded-[var(--radius-sm)] p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${
               risk === "DANGER"
                 ? "border-[var(--color-danger)] bg-[var(--color-danger-tint)]"
                 : risk === "WARNING"
@@ -162,10 +162,10 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
 
       {/* The ledger */}
       <div className="border border-hairline rounded-[var(--radius-md)] bg-paper-raised h-fit">
-        <div className="px-5 py-3 border-b border-hairline">
+        <div className="px-4 sm:px-5 py-3 border-b border-hairline">
           <span className="text-xs font-medium text-ink-muted tracking-wide">AWARD LEDGER — SECTIONS 25–30</span>
         </div>
-        <div className="px-5 py-2">
+        <div className="px-4 sm:px-5 py-2">
           {breakdown ? (
             <>
               <LedgerRow label={`Market Value = MAX(₹${circleRate || 0}, ₹${saleDeed || 0}) × ${areaAcres} acres`} value={breakdown.marketValue} />
@@ -182,9 +182,9 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
                 sub
                 isDelta
               />
-              <div className="flex items-baseline justify-between pt-4 pb-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between pt-4 pb-3">
                 <span className="text-sm font-medium">Final Compensation Amount</span>
-                <span className="font-mono-data text-2xl font-semibold text-brand">
+                <span className="font-mono-data text-xl sm:text-2xl font-semibold text-brand break-all">
                   {formatINR(breakdown.finalCompensationAmount)}
                 </span>
               </div>
@@ -212,9 +212,9 @@ function LedgerRow({
   isDelta?: boolean;
 }) {
   return (
-    <div className={`flex items-baseline justify-between py-2.5 border-b border-hairline ${highlight ? "text-brand" : ""}`}>
-      <span className={`text-sm ${sub ? "text-ink-muted" : ""}`}>{label}</span>
-      <span className="font-mono-data text-sm tabular-nums">
+    <div className={`flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between py-2.5 border-b border-hairline ${highlight ? "text-brand" : ""}`}>
+      <span className={`text-sm break-words ${sub ? "text-ink-muted" : ""}`}>{label}</span>
+      <span className="font-mono-data text-sm tabular-nums shrink-0">
         {isDelta && value > 0 ? "+" : ""}
         {formatINR(value)}
       </span>

@@ -18,12 +18,21 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/documents", label: "Documents", show: () => true },
 ];
 
-export function Sidebar({ role }: { role: Role }) {
+export function Sidebar({
+  role,
+  onNavigate,
+  className = "",
+}: {
+  role: Role;
+  /** Called when a nav link is tapped — used to close the mobile drawer. */
+  onNavigate?: () => void;
+  className?: string;
+}) {
   const pathname = usePathname();
   const perm = PERMISSIONS[role];
 
   return (
-    <nav className="w-56 shrink-0 border-r border-hairline flex flex-col py-4">
+    <nav className={`flex flex-col py-4 ${className}`}>
       <ul className="flex flex-col gap-0.5 px-2">
         {NAV_ITEMS.filter((item) => item.show(perm)).map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -31,7 +40,8 @@ export function Sidebar({ role }: { role: Role }) {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className={`block px-3 py-2 text-sm rounded-[var(--radius-sm)] ${
+                onClick={onNavigate}
+                className={`block px-3 py-3 md:py-2 text-sm rounded-[var(--radius-sm)] ${
                   active
                     ? "bg-brand-tint text-brand-dark font-medium"
                     : "text-ink-muted hover:bg-paper-raised hover:text-ink"

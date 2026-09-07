@@ -20,12 +20,12 @@ export function StageTracker({
           return (
             <li key={stage.key} className="flex items-start">
               <div
-                className={`flex flex-col items-center ${compact ? "w-[4.25rem]" : "w-24"}`}
+                className={`flex flex-col items-center ${compact ? "w-[4.25rem]" : "w-16 sm:w-24"}`}
                 title={`${stage.order} — ${stage.shortLabel}: ${stage.description}`}
               >
                 <div
                   className={`flex items-center justify-center rounded-full border font-mono-data text-xs cursor-default ${
-                    compact ? "w-6 h-6" : "w-8 h-8"
+                    compact ? "w-6 h-6" : "w-7 h-7 sm:w-8 sm:h-8"
                   } ${
                     isDone
                       ? "bg-green text-white border-green"
@@ -38,7 +38,7 @@ export function StageTracker({
                 </div>
                 <div
                   className={`mt-2 text-center leading-tight px-0.5 ${
-                    compact ? "text-[9px]" : "text-[11px]"
+                    compact ? "text-[9px]" : "text-[10px] sm:text-[11px]"
                   } ${
                     isCurrent
                       ? "text-ink font-medium"
@@ -52,10 +52,10 @@ export function StageTracker({
               </div>
               {!isLast && (
                 <div
-                  className={`${compact ? "w-3" : "w-6"} h-px shrink-0 ${
+                  className={`${compact ? "w-3" : "w-4 sm:w-6"} h-px shrink-0 ${
                     isDone ? "bg-green" : "bg-hairline-strong"
                   }`}
-                  style={{ marginTop: compact ? "11px" : "15px" }}
+                  style={{ marginTop: compact ? "11px" : "13px" }}
                 />
               )}
             </li>

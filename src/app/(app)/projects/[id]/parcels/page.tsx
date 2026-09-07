@@ -5,8 +5,10 @@ import { PERMISSIONS } from "@/lib/domain/roles";
 import { Panel, PanelHeader, PanelBody } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { formatNumber } from "@/lib/domain/format";
 import { addParcel, addAffectedPerson } from "./actions";
+import type { AffectedPerson } from "@prisma/client";
 
 const LAND_CLASSIFICATIONS = [
   ["AGRICULTURAL_MULTI_CROP_IRRIGATED", "Agricultural — Multi-crop irrigated"],
@@ -24,6 +26,22 @@ const AFFECTED_PERSON_ROLES = [
   ["AGRICULTURAL_LABORER", "Agricultural Laborer"],
   ["OTHER_LIVELIHOOD_DEPENDENT", "Other Livelihood-Dependent"],
 ] as const;
+
+const personColumns: DataColumn<AffectedPerson>[] = [
+  { key: "name", header: "Name", primary: true, render: (ap) => ap.name },
+  {
+    key: "role",
+    header: "Role",
+    render: (ap) => <Badge tone="brand">{AFFECTED_PERSON_ROLES.find(([v]) => v === ap.role)?.[1]}</Badge>,
+  },
+  { key: "scSt", header: "SC/ST", render: (ap) => (ap.scStStatus ? "Yes" : "—") },
+  {
+    key: "claim",
+    header: "Claim (₹)",
+    className: "font-mono-data",
+    render: (ap) => (ap.compensationClaimAmount ? formatNumber(Number(ap.compensationClaimAmount)) : "—"),
+  },
+];
 
 export default async function ParcelsPage({
   params,
@@ -98,33 +116,15 @@ export default async function ParcelsPage({
                 )}
               </PanelHeader>
               <PanelBody>
-                <table className="w-full text-sm mb-4">
-                  <thead>
-                    <tr className="text-left text-xs text-ink-muted border-b border-hairline">
-                      <th className="py-2 font-medium">Name</th>
-                      <th className="py-2 font-medium">Role</th>
-                      <th className="py-2 font-medium">SC/ST</th>
-                      <th className="py-2 font-medium">Claim (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parcel.affectedPersons.length === 0 && (
-                      <tr><td colSpan={4} className="py-3 text-ink-muted text-sm">No affected persons recorded.</td></tr>
-                    )}
-                    {parcel.affectedPersons.map((ap) => (
-                      <tr key={ap.id} className="border-b border-hairline last:border-0">
-                        <td className="py-2">{ap.name}</td>
-                        <td className="py-2">
-                          <Badge tone="brand">{AFFECTED_PERSON_ROLES.find(([v]) => v === ap.role)?.[1]}</Badge>
-                        </td>
-                        <td className="py-2">{ap.scStStatus ? "Yes" : "—"}</td>
-                        <td className="py-2 font-mono-data">
-                          {ap.compensationClaimAmount ? formatNumber(Number(ap.compensationClaimAmount)) : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="mb-4">
+                  <ResponsiveDataTable
+                    dense
+                    columns={personColumns}
+                    rows={parcel.affectedPersons}
+                    rowKey={(ap) => ap.id}
+                    emptyMessage="No affected persons recorded."
+                  />
+                </div>
 
                 <form action={addPersonAction} className="grid md:grid-cols-5 gap-3 items-end border-t border-hairline pt-4">
                   <Field label="Name"><input name="name" required className="input" /></Field>

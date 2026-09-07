@@ -7,10 +7,13 @@ import { riskStatusForDeadline, AT_RISK_WINDOW_MONTHS } from "@/lib/domain/compe
 import { Panel } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
-import { Table, THead, TH, TR, TD, TEmpty } from "@/components/ui/Table";
+import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { STAGES, stageOrder } from "@/lib/domain/stages";
 import { formatNumber } from "@/lib/domain/format";
 import Link from "next/link";
+import type { Project, Award, Possession } from "@prisma/client";
+
+type ProjectRow = Project & { award: Award | null; possession: Possession | null };
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -46,9 +49,33 @@ export default async function DashboardPage() {
     national: "nationwide",
   };
 
+  const columns: DataColumn<ProjectRow>[] = [
+    {
+      key: "title",
+      header: "Title",
+      primary: true,
+      render: (p) => (
+        <Link href={`/projects/${p.id}`} className="text-brand hover:underline font-medium">
+          {p.title}
+        </Link>
+      ),
+    },
+    { key: "location", header: "District / State", render: (p) => <span className="text-ink-muted">{p.district}, {p.state}</span> },
+    {
+      key: "stage",
+      header: "Stage",
+      render: (p) => (
+        <Badge tone="brand">
+          {stageOrder(p.currentStage as never)}. {STAGES.find((s) => s.key === p.currentStage)?.shortLabel}
+        </Badge>
+      ),
+    },
+    { key: "area", header: "Area (acres)", className: "font-mono-data", render: (p) => formatNumber(Number(p.totalAreaAcres)) },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif-heading text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-ink-muted mt-1">
@@ -56,11 +83,13 @@ export default async function DashboardPage() {
           </p>
         </div>
         {perm.createProject && (
-          <LinkButton href="/projects/new">New Project</LinkButton>
+          <LinkButton href="/projects/new" className="w-full sm:w-auto justify-center">
+            New Project
+          </LinkButton>
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Projects in scope" value={formatNumber(projects.length)} />
         <StatCard label="Total area (acres)" value={formatNumber(totalArea)} />
         <StatCard
@@ -76,41 +105,18 @@ export default async function DashboardPage() {
       </div>
 
       <Panel raised>
-        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-4 border-b border-hairline flex items-center justify-between">
           <h2 className="font-medium text-sm">Projects</h2>
           <Link href="/projects" className="text-sm text-brand hover:underline">
             View all →
           </Link>
         </div>
-        <Table>
-          <THead>
-            <TH>Title</TH>
-            <TH>District / State</TH>
-            <TH>Stage</TH>
-            <TH>Area (acres)</TH>
-          </THead>
-          <tbody>
-            {projects.length === 0 && <TEmpty colSpan={4}>No projects in scope yet.</TEmpty>}
-            {projects.slice(0, 10).map((p) => (
-              <TR key={p.id}>
-                <TD>
-                  <Link href={`/projects/${p.id}`} className="text-brand hover:underline font-medium">
-                    {p.title}
-                  </Link>
-                </TD>
-                <TD className="text-ink-muted">
-                  {p.district}, {p.state}
-                </TD>
-                <TD>
-                  <Badge tone="brand">
-                    {stageOrder(p.currentStage as never)}. {STAGES.find((s) => s.key === p.currentStage)?.shortLabel}
-                  </Badge>
-                </TD>
-                <TD className="font-mono-data">{formatNumber(Number(p.totalAreaAcres))}</TD>
-              </TR>
-            ))}
-          </tbody>
-        </Table>
+        <ResponsiveDataTable
+          columns={columns}
+          rows={projects.slice(0, 10)}
+          rowKey={(p) => p.id}
+          emptyMessage="No projects in scope yet."
+        />
       </Panel>
     </div>
   );
@@ -135,9 +141,9 @@ function StatCard({
       : "text-ink";
 
   return (
-    <Panel className="p-4">
+    <Panel className="p-3 sm:p-4">
       <div className="text-xs text-ink-muted mb-1.5">{label}</div>
-      <div className={`font-mono-data text-2xl font-semibold ${toneClass}`}>{value}</div>
+      <div className={`font-mono-data text-xl sm:text-2xl font-semibold ${toneClass}`}>{value}</div>
     </Panel>
   );
 }
