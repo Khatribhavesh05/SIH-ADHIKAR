@@ -6,6 +6,8 @@ import { formatNumber, formatDate } from "@/lib/domain/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConnectedSystemsWidget } from "@/components/app/ConnectedSystemsWidget";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
+import { generateNationalReportPdf } from "@/lib/reports/nationalReport";
 import {
   AlertTriangle,
   TrendingUp,
@@ -43,6 +45,30 @@ export interface CommandProject {
   consentRecord: any;
 }
 
+function downloadRiskListCsv(
+  scopeLabel: string,
+  rows: { project: CommandProject; daysLeft: number; reason: string }[]
+) {
+  const header = ["Project Name", "State", "District", "Days Overdue/Remaining", "Status", "Reason"];
+  const csvRows = rows.map(({ project: p, daysLeft, reason }) => [
+    p.title,
+    p.state,
+    p.district,
+    daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d remaining`,
+    daysLeft < 0 ? "Overdue" : daysLeft < 30 ? "Upcoming Deadline" : "On Track",
+    reason,
+  ]);
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const csv = [header, ...csvRows].map((r) => r.map(escape).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `adhikar-national-report-${scopeLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function NationalCommandCenter({
   projects,
   interactive = true,
@@ -56,6 +82,7 @@ export function NationalCommandCenter({
   const [reportFormat, setReportFormat] = useState<"PDF" | "EXCEL">("PDF");
   const [generatingReport, setGeneratingReport] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const { toast, showToast } = useToast();
 
   // States list
   const states = useMemo(() => {
@@ -221,15 +248,51 @@ export function NationalCommandCenter({
   }, [alertsFeed, severityFilter]);
 
   function handleGenerateReport() {
+    const scopeLabel = selectedState === "ALL" ? "Nationwide" : selectedState;
     setGeneratingReport(true);
-    setTimeout(() => {
-      setGeneratingReport(false);
-      alert(`Adhikar National Land Acquisition Report (${selectedState === "ALL" ? "Nationwide" : selectedState}) successfully generated as ${reportFormat}.`);
-    }, 1200);
+
+    // Yield a frame so the "Exporting Report..." state actually paints before
+    // the (synchronous) PDF generation blocks the main thread.
+    window.setTimeout(() => {
+      try {
+        if (reportFormat === "PDF") {
+          generateNationalReportPdf({
+            scopeLabel,
+            kpis: {
+              totalProjects,
+              areaAcquiredAcres: Math.round(areaAcquired),
+              areaNotifiedAcres: Math.round(totalAreaNotified),
+              areaAcquiredPercent,
+              compensationDisbursedCr: compensationDisbursedRupees / 10000000,
+              compensationAssessedCr: compensationAssessedRupees / 10000000,
+              compensationPercent,
+              familiesResettled: resettledFamilies,
+              familiesTotal: totalFamilies,
+              resettledPercent,
+              costOfDelayCr: Number(costOfDelayCr),
+            },
+            riskRows: riskRankedProjects.map(({ project: p, daysLeft }) => ({
+              title: p.title,
+              state: p.state,
+              daysLeft,
+            })),
+          });
+        } else {
+          downloadRiskListCsv(scopeLabel, riskRankedProjects);
+        }
+        showToast("success", `${scopeLabel} report exported as ${reportFormat === "PDF" ? "PDF" : "CSV spreadsheet"}.`);
+      } catch (err) {
+        console.error("Report generation failed", err);
+        showToast("error", "Report generation failed. Please try again.");
+      } finally {
+        setGeneratingReport(false);
+      }
+    }, 50);
   }
 
   return (
     <div className="flex flex-col gap-6">
+      <ToastBanner toast={toast} />
       {/* State Filter Bar & Connected Systems Status */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-paper-raised border border-hairline p-3.5 rounded-md shadow-xs">
         <div className="flex items-center gap-2 flex-wrap">
@@ -342,7 +405,11 @@ export function NationalCommandCenter({
           </div>
 
           <div className="rounded border border-hairline overflow-hidden">
-            <MapClient projects={mapProjects} />
+            <MapClient
+              projects={mapProjects}
+              interactive={interactive}
+              onRestrictedNavigate={() => setShowSignInPrompt(true)}
+            />
           </div>
         </div>
 

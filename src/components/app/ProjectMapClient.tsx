@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { APIProvider, Map, Marker, InfoWindow, useMap } from "@vis.gl/react-google-maps";
+import Link from "next/link";
+import {
+  APIProvider,
+  Map,
+  Marker,
+  InfoWindow,
+  Circle,
+  MapControl,
+  ControlPosition,
+  useMap,
+} from "@vis.gl/react-google-maps";
+import { Home } from "lucide-react";
 
 export interface MapProject {
   id: string;
@@ -31,6 +42,21 @@ const INDIA_CENTER = { lat: 22.5, lng: 80.0 };
 const INDIA_DEFAULT_ZOOM = 5;
 const SINGLE_MARKER_ZOOM = 12;
 
+// Zoom level a single click-to-preview animates to, and the threshold above
+// which the approximate parcel-area highlight becomes visible (so it doesn't
+// clutter the nationwide/state-level view).
+const CLICK_PREVIEW_ZOOM = 16;
+const PARCEL_HIGHLIGHT_ZOOM_THRESHOLD = 14;
+
+// Approximate parcel highlight radius from a project's notified area — clamped
+// to a plausible on-the-ground range since we only have an acreage total, not
+// a surveyed polygon.
+function parcelHighlightRadiusMeters(areaAcres: number): number {
+  const areaSqMeters = Math.max(areaAcres, 0) * 4046.86;
+  const radius = Math.sqrt(areaSqMeters / Math.PI);
+  return Math.min(300, Math.max(150, radius));
+}
+
 function FitToMarkers({ projects }: { projects: MapProject[] }) {
   const map = useMap();
   const hasFit = useRef(false);
@@ -55,6 +81,52 @@ function FitToMarkers({ projects }: { projects: MapProject[] }) {
   return null;
 }
 
+// Drives the click-to-zoom-and-preview animation and the "Reset view" control.
+// Must live inside <Map> (not MapInner) since useMap()/MapControl both need
+// the GoogleMapsContext that <Map> provides to its descendants.
+function MapCamera({
+  selected,
+  onReset,
+}: {
+  selected: MapProject | null;
+  onReset: () => void;
+}) {
+  const map = useMap();
+  const lastZoomedId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!map || !selected || lastZoomedId.current === selected.id) return;
+    lastZoomedId.current = selected.id;
+    // panTo animates smoothly for short hops; setZoom then brings the marker
+    // to parcel-level detail. Native double-click-to-zoom still layers on
+    // top of this normally since we only touch zoom/center once per click.
+    map.panTo({ lat: selected.lat, lng: selected.lng });
+    map.setZoom(CLICK_PREVIEW_ZOOM);
+  }, [map, selected]);
+
+  function handleReset() {
+    lastZoomedId.current = null;
+    onReset();
+    if (!map) return;
+    map.panTo(INDIA_CENTER);
+    map.setZoom(INDIA_DEFAULT_ZOOM);
+  }
+
+  return (
+    <MapControl position={ControlPosition.RIGHT_BOTTOM}>
+      <button
+        type="button"
+        onClick={handleReset}
+        title="Reset view"
+        aria-label="Reset view to nationwide default"
+        className="m-2 w-9 h-9 rounded bg-white border border-hairline-strong shadow-md flex items-center justify-center text-ink hover:bg-paper transition-colors cursor-pointer"
+      >
+        <Home className="w-4 h-4" />
+      </button>
+    </MapControl>
+  );
+}
+
 // Classic google.maps.Marker rather than AdvancedMarker — AdvancedMarker
 // requires a vector-rendering Map ID (configured in Cloud Console) and
 // throws at runtime against a raster Map ID, which isn't guaranteed here.
@@ -77,9 +149,21 @@ function RiskMarker({ project, onSelect }: { project: MapProject; onSelect: (id:
   );
 }
 
-function MapInner({ projects, mapId }: { projects: MapProject[]; mapId: string }) {
+function MapInner({
+  projects,
+  mapId,
+  interactive,
+  onRestrictedNavigate,
+}: {
+  projects: MapProject[];
+  mapId: string;
+  interactive: boolean;
+  onRestrictedNavigate?: () => void;
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [currentZoom, setCurrentZoom] = useState(INDIA_DEFAULT_ZOOM);
   const selected = projects.find((p) => p.id === selectedId) ?? null;
+  const showParcelHighlight = selected !== null && currentZoom >= PARCEL_HIGHLIGHT_ZOOM_THRESHOLD;
 
   return (
     <Map
@@ -99,12 +183,26 @@ function MapInner({ projects, mapId }: { projects: MapProject[]; mapId: string }
       mapTypeControl={false}
       fullscreenControl={true}
       zoomControl={true}
+      onCameraChanged={(ev) => setCurrentZoom(ev.detail.zoom)}
       style={{ width: "100%", height: "100%" }}
     >
       <FitToMarkers projects={projects} />
+      <MapCamera selected={selected} onReset={() => setSelectedId(null)} />
       {projects.map((p) => (
         <RiskMarker key={p.id} project={p} onSelect={setSelectedId} />
       ))}
+      {showParcelHighlight && selected && (
+        <Circle
+          center={{ lat: selected.lat, lng: selected.lng }}
+          radius={parcelHighlightRadiusMeters(selected.areaAcres)}
+          fillColor={RISK_COLORS[selected.riskTone]}
+          fillOpacity={0.18}
+          strokeColor={RISK_COLORS[selected.riskTone]}
+          strokeOpacity={0.5}
+          strokeWeight={1.5}
+          clickable={false}
+        />
+      )}
       {selected && (
         <InfoWindow
           position={{ lat: selected.lat, lng: selected.lng }}
@@ -137,6 +235,22 @@ function MapInner({ projects, mapId }: { projects: MapProject[]; mapId: string }
                 </span>
               </div>
             )}
+            {interactive ? (
+              <Link
+                href={`/projects/${selected.id}`}
+                className="mt-2.5 block text-center text-xs font-semibold text-white bg-brand hover:bg-brand-dark transition-colors rounded px-3 py-1.5"
+              >
+                View Full Details
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onRestrictedNavigate?.()}
+                className="mt-2.5 w-full text-center text-xs font-semibold text-white bg-brand hover:bg-brand-dark transition-colors rounded px-3 py-1.5 cursor-pointer"
+              >
+                View Full Details
+              </button>
+            )}
           </div>
         </InfoWindow>
       )}
@@ -144,7 +258,16 @@ function MapInner({ projects, mapId }: { projects: MapProject[]; mapId: string }
   );
 }
 
-export function ProjectMapClient({ projects }: { projects: MapProject[] }) {
+export function ProjectMapClient({
+  projects,
+  interactive = true,
+  onRestrictedNavigate,
+}: {
+  projects: MapProject[];
+  /** Set to false for public/logged-out previews — routes the info popup's "View Full Details" through onRestrictedNavigate instead of linking into protected /projects/[id] routes. */
+  interactive?: boolean;
+  onRestrictedNavigate?: () => void;
+}) {
   const markers = useMemo(() => projects, [projects]);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -170,7 +293,12 @@ export function ProjectMapClient({ projects }: { projects: MapProject[] }) {
   return (
     <div style={{ height: "600px", width: "100%" }}>
       <APIProvider apiKey={apiKey} libraries={["marker"]}>
-        <MapInner projects={markers} mapId={mapId} />
+        <MapInner
+          projects={markers}
+          mapId={mapId}
+          interactive={interactive}
+          onRestrictedNavigate={onRestrictedNavigate}
+        />
       </APIProvider>
     </div>
   );

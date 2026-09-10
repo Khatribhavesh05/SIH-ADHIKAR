@@ -61,16 +61,16 @@ export default async function LandingPage() {
       {/* HERO SECTION */}
       <section className="relative bg-brand-dark text-white border-b border-hairline py-20 lg:py-28 overflow-hidden">
         {/* Full-bleed background image with dark overlay */}
-        <div className="absolute inset-0 z-0 opacity-30 mix-blend-luminosity">
+        <div className="absolute inset-0 z-0 opacity-50">
           <Image
             src="/images/hero_bg.jpg"
             alt="Indian Infrastructure Corridor"
             fill
-            className="object-cover"
+            className="object-cover object-center"
             priority
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/90 to-brand-dark/70 z-0" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/95 to-brand-dark/75 z-0" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-8 flex flex-col items-start gap-6">
@@ -78,11 +78,11 @@ export default async function LandingPage() {
               <span>National Prototype · SIH26016</span>
             </div>
 
-            <h1 className="font-serif-heading text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] text-white tracking-tight">
+            <h1 className="font-serif-heading text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] text-white tracking-tight drop-shadow-sm">
               India&rsquo;s Real-Time Land Acquisition Command Center
             </h1>
 
-            <p className="text-paper/90 text-base sm:text-lg max-w-[65ch] leading-relaxed">
+            <p className="text-paper/95 text-base sm:text-lg max-w-[65ch] leading-relaxed drop-shadow-xs">
               Tracking every land acquisition project in the country against its legal deadlines — so nothing gets lost in paperwork.
             </p>
 
@@ -101,19 +101,19 @@ export default async function LandingPage() {
 
           {/* Stat Box Strip */}
           <div className="lg:col-span-4 flex flex-col gap-4">
-            <div className="p-4 rounded-md border border-white/15 bg-white/5 backdrop-blur-sm">
+            <div className="p-4 rounded-md border border-white/20 bg-brand-dark/80 backdrop-blur-md shadow-sm">
               <div className="font-mono-data text-3xl font-extrabold text-saffron">35%</div>
-              <div className="text-xs text-paper/80 mt-1">of stalled highway projects delayed by land disputes</div>
+              <div className="text-xs text-paper/90 mt-1 font-medium">of stalled highway projects delayed by land disputes</div>
             </div>
 
-            <div className="p-4 rounded-md border border-white/15 bg-white/5 backdrop-blur-sm">
+            <div className="p-4 rounded-md border border-white/20 bg-brand-dark/80 backdrop-blur-md shadow-sm">
               <div className="font-mono-data text-3xl font-extrabold text-saffron">₹186.86 Cr</div>
-              <div className="text-xs text-paper/80 mt-1">lost by one project — to a missed deadline, not land cost</div>
+              <div className="text-xs text-paper/90 mt-1 font-medium">lost by one project — to a missed deadline, not land cost</div>
             </div>
 
-            <div className="p-4 rounded-md border border-white/15 bg-white/5 backdrop-blur-sm">
+            <div className="p-4 rounded-md border border-white/20 bg-brand-dark/80 backdrop-blur-md shadow-sm">
               <div className="font-mono-data text-3xl font-extrabold text-white">9 Stages</div>
-              <div className="text-xs text-paper/80 mt-1">legal statutory workflow into 1 unified command system</div>
+              <div className="text-xs text-paper/90 mt-1 font-medium">legal statutory workflow into 1 unified command system</div>
             </div>
           </div>
         </div>
@@ -184,13 +184,14 @@ export default async function LandingPage() {
 
           <ProcessStepper />
 
-          <div className="mt-8 rounded-md border border-hairline overflow-hidden shadow-xs bg-paper p-2">
+          <div className="mt-8 rounded-md border border-hairline overflow-hidden shadow-xs bg-paper p-1.5">
             <Image
               src="/images/process_banner.jpg"
-              alt="9-Stage Process Journey Illustration"
+              alt="9-Stage Process Journey Banner"
               width={1200}
               height={675}
-              className="w-full h-auto rounded"
+              className="w-full h-auto rounded object-cover"
+              priority
             />
           </div>
         </div>
