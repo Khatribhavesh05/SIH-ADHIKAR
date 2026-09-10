@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { serializeDecimals } from "@/lib/serialize";
 export const dynamic = "force-dynamic";
 import { GovSeal } from "@/components/ui/GovSeal";
 import { LinkButton } from "@/components/ui/Button";
@@ -10,19 +11,21 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default async function LandingPage() {
-  const projects = await prisma.project.findMany({
-    include: {
-      award: {
-        include: {
-          disbursements: { include: { claimant: true } },
+  const projects = serializeDecimals(
+    await prisma.project.findMany({
+      include: {
+        award: {
+          include: {
+            disbursements: { include: { claimant: true } },
+          },
         },
+        possession: true,
+        parcels: { include: { affectedPersons: true } },
+        consentRecord: true,
       },
-      possession: true,
-      parcels: { include: { affectedPersons: true } },
-      consentRecord: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   return (
     <div className="flex flex-col min-h-screen bg-paper text-ink overflow-x-hidden">
@@ -61,7 +64,7 @@ export default async function LandingPage() {
       {/* HERO SECTION */}
       <section className="relative bg-brand-dark text-white border-b border-hairline py-20 lg:py-28 overflow-hidden">
         {/* Full-bleed background image with dark overlay */}
-        <div className="absolute inset-0 z-0 opacity-50">
+        <div className="absolute inset-0 z-0 opacity-80">
           <Image
             src="/images/hero_bg.jpg"
             alt="Indian Infrastructure Corridor"
@@ -70,7 +73,7 @@ export default async function LandingPage() {
             priority
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/95 to-brand-dark/75 z-0" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/50 to-brand-dark/25 z-0" />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-8 flex flex-col items-start gap-6">
@@ -255,19 +258,9 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER WITH WATERMARK */}
-      <footer className="relative bg-brand-dark text-white border-t border-hairline py-10 overflow-hidden">
-        {/* Low opacity India watermark background */}
-        <div className="absolute inset-0 z-0 opacity-10 mix-blend-screen pointer-events-none">
-          <Image
-            src="/images/india_watermark.jpg"
-            alt="India Outline Watermark"
-            fill
-            className="object-contain object-center"
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-6xl px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-paper/80">
+      {/* FOOTER */}
+      <footer className="bg-brand-dark text-white border-t border-hairline py-10">
+        <div className="mx-auto max-w-6xl px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-paper/80">
           <div className="flex items-center gap-2">
             <GovSeal size={28} />
             <div>

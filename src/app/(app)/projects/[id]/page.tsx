@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { serializeDecimals } from "@/lib/serialize";
 import { ProjectTabsContainer } from "@/components/app/project-tabs/ProjectTabsContainer";
 import { Badge } from "@/components/ui/Badge";
 import { formatNumber } from "@/lib/domain/format";
@@ -14,28 +15,30 @@ export default async function ProjectDetailPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const project = await prisma.project.findUnique({
-    where: { id },
-    include: {
-      notifications: { orderBy: { publicationDate: "desc" } },
-      parcels: { include: { affectedPersons: true } },
-      award: {
-        include: {
-          disbursements: {
-            include: { claimant: true },
+  const project = serializeDecimals(
+    await prisma.project.findUnique({
+      where: { id },
+      include: {
+        notifications: { orderBy: { publicationDate: "desc" } },
+        parcels: { include: { affectedPersons: true } },
+        award: {
+          include: {
+            disbursements: {
+              include: { claimant: true },
+            },
           },
         },
-      },
-      possession: true,
-      rrScheme: {
-        include: {
-          entitlements: { include: { person: true } },
+        possession: true,
+        rrScheme: {
+          include: {
+            entitlements: { include: { person: true } },
+          },
         },
+        consentRecord: true,
+        siaRecords: true,
       },
-      consentRecord: true,
-      siaRecords: true,
-    },
-  });
+    })
+  );
 
   if (!project) notFound();
 

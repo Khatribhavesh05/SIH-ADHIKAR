@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { projectScopeWhere } from "@/lib/queries/scope";
+import { serializeDecimals } from "@/lib/serialize";
 import { PERMISSIONS, ROLE_LABELS } from "@/lib/domain/roles";
 import { NationalCommandCenter } from "@/components/app/NationalCommandCenter";
 import { Panel } from "@/components/ui/Panel";
@@ -22,20 +23,22 @@ export default async function DashboardPage() {
   const perm = PERMISSIONS[user.role];
 
   const where = projectScopeWhere(user.role, user);
-  const projects = await prisma.project.findMany({
-    where,
-    include: {
-      award: {
-        include: {
-          disbursements: { include: { claimant: true } },
+  const projects = serializeDecimals(
+    await prisma.project.findMany({
+      where,
+      include: {
+        award: {
+          include: {
+            disbursements: { include: { claimant: true } },
+          },
         },
+        possession: true,
+        parcels: { include: { affectedPersons: true } },
+        consentRecord: true,
       },
-      possession: true,
-      parcels: { include: { affectedPersons: true } },
-      consentRecord: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   const totalArea = projects.reduce((sum, p) => sum + Number(p.totalAreaAcres), 0);
 
