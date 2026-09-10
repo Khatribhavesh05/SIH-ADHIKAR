@@ -112,36 +112,3 @@ body {
   outline: none;
   border-color: var(--color-brand);
 }
-
-/* Google Translate Hidden Chroming */
-.goog-te-banner-frame,
-iframe.goog-te-banner-frame,
-.goog-te-balloon-frame {
-  display: none !important;
-}
-body {
-  top: 0px !important;
-  position: static !important;
-}
-.goog-te-gadget {
-  display: inline-block !important;
-  visibility: hidden !important;
-  height: 0px !important;
-  width: 0px !important;
-  overflow: hidden !important;
-  font-size: 0px !important;
-}
-.goog-te-gadget .goog-te-combo {
-  visibility: hidden !important;
-  height: 0px !important;
-  width: 0px !important;
-}
-.goog-tooltip,
-.goog-tooltip:hover {
-  display: none !important;
-}
-.goog-text-highlight {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}

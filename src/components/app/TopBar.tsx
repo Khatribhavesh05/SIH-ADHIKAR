@@ -3,7 +3,6 @@ import { ROLE_LABELS, type Role } from "@/lib/domain/roles";
 import { AccountSwitcher } from "@/components/app/AccountSwitcher";
 import { SignOutButton } from "@/components/app/SignOutButton";
 import { MobileAccountMenu } from "@/components/app/MobileAccountMenu";
-import { GoogleTranslateWidget } from "@/components/app/GoogleTranslateWidget";
 import Link from "next/link";
 
 export function TopBar({
@@ -40,10 +39,8 @@ export function TopBar({
           </Link>
         </div>
 
-        {/* Right side: language toggle + user info */}
+        {/* Right side: user info */}
         <div className="flex items-center gap-3">
-          <GoogleTranslateWidget />
-
           {/* Desktop: full identity block + switcher + sign out, inline */}
           <div className="hidden md:flex items-center gap-4 border-l border-hairline pl-3">
             <div className="text-right leading-tight">

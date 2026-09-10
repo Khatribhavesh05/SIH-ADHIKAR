@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 import { GovSeal } from "@/components/ui/GovSeal";
 import { LinkButton } from "@/components/ui/Button";
-import { GoogleTranslateWidget } from "@/components/app/GoogleTranslateWidget";
 import { PWASplitDetector } from "@/components/app/PWASplitDetector";
 import { ProcessStepper } from "@/components/app/ProcessStepper";
 import { NationalCommandCenter } from "@/components/app/NationalCommandCenter";
@@ -43,7 +42,7 @@ export default async function LandingPage() {
             </div>
           </Link>
 
-          {/* Right: Nav, Language Toggle, Login */}
+          {/* Right: Nav, Login */}
           <div className="flex items-center gap-4 sm:gap-6">
             <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-ink-muted">
               <a href="#about" className="hover:text-brand transition-colors">About</a>
@@ -51,8 +50,6 @@ export default async function LandingPage() {
               <a href="#preview" className="hover:text-brand transition-colors">Live Dashboard Preview</a>
               <a href="#who-uses-this" className="hover:text-brand transition-colors">Who Uses This</a>
             </nav>
-
-            <GoogleTranslateWidget />
 
             <LinkButton href="/login" variant="primary" className="text-xs px-4 py-2 min-h-0 font-semibold shadow-xs">
               Login to Portal
@@ -186,6 +183,16 @@ export default async function LandingPage() {
           </div>
 
           <ProcessStepper />
+
+          <div className="mt-8 rounded-md border border-hairline overflow-hidden shadow-xs bg-paper p-2">
+            <Image
+              src="/images/process_banner.jpg"
+              alt="9-Stage Process Journey Illustration"
+              width={1200}
+              height={675}
+              className="w-full h-auto rounded"
+            />
+          </div>
         </div>
       </section>
 

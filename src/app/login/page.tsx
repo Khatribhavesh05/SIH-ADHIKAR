@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { GovSeal } from "@/components/ui/GovSeal";
-import { GoogleTranslateWidget } from "@/components/app/GoogleTranslateWidget";
 import Link from "next/link";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/domain/demo-accounts";
 import { ROLE_LABELS } from "@/lib/domain/roles";
@@ -42,10 +41,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-paper relative">
-      <div className="absolute top-4 right-4">
-        <GoogleTranslateWidget />
-      </div>
-
       <div className="flex items-center gap-3 mb-8">
         <GovSeal size={44} />
         <div>

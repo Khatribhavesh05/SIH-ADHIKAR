@@ -7,9 +7,6 @@ export const metadata: Metadata = {
   description:
     "Real-time land acquisition command center digitizing India's RFCTLARR Act 2013 statutory processes, deadlines, compensation, and rehabilitation.",
   manifest: "/manifest.webmanifest",
-  other: {
-    google: "notranslate",
-  },
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },

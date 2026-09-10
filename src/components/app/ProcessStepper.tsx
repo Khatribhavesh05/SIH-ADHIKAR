@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Users, CheckSquare, ShieldCheck, Lock, Award, Coins, Home, Building2, MapPin } from "lucide-react";
-
-const MILESTONES = [
-  { icon: FileText, label: "Gazette Notification" },
-  { icon: MapPin, label: "Survey & Declaration" },
-  { icon: Coins, label: "Compensation Award" },
-  { icon: Home, label: "Possession & R&R" },
-];
+import { FileText, Users, CheckSquare, ShieldCheck, Lock, Award, Coins, Home, Building2 } from "lucide-react";
 
 const STAGES = [
   { id: 1, title: "Notification", icon: FileText, label: "Gazette & Public Notice", detail: "Publishing preliminary Section 11 notice in official gazette, 2 local newspapers, and village notice boards with 60-day objection window." },
@@ -69,26 +62,6 @@ export function ProcessStepper() {
             Hover over or tap any of the 9 statutory stages above to inspect its legal requirements and workflow contract.
           </div>
         )}
-      </div>
-
-      {/* Journey Milestone Banner */}
-      <div className="relative flex items-start justify-between px-2 sm:px-6">
-        {/* Connecting line */}
-        <div className="absolute top-6 left-[12.5%] right-[12.5%] h-px bg-hairline-strong" aria-hidden="true" />
-
-        {MILESTONES.map((m, i) => {
-          const Icon = m.icon;
-          return (
-            <div key={m.label} className="relative z-10 flex flex-col items-center gap-2 w-1/4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-paper-raised border-2 border-brand/30 text-brand shadow-xs">
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="text-[11px] font-semibold text-ink-muted text-center leading-tight">
-                {m.label}
-              </span>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
