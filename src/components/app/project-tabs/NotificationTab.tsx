@@ -4,22 +4,30 @@ import { useState } from "react";
 import { formatDate } from "@/lib/domain/format";
 import { submitNotification } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { FileText, Calendar, Upload, CheckCircle2, Clock } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function NotificationTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const { toast, showToast } = useToast();
 
   const notifications = project.notifications || [];
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    await submitNotification(project.id, formData);
-    setLoading(false);
-    setShowForm(false);
+    try {
+      const formData = new FormData(e.currentTarget);
+      await submitNotification(project.id, formData);
+      showToast("success", "Notification record saved.");
+      setShowForm(false);
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to save notification.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const daysLeftObjection = (deadline: Date) => {
@@ -93,7 +101,8 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
             </label>
           </div>
 
-          <div className="flex justify-end gap-2 mt-2">
+          <div className="flex items-center justify-end gap-3 mt-2">
+            <ToastBanner toast={toast} />
             <Button type="submit" disabled={loading} className="text-xs px-4 py-2">
               {loading ? "Saving..." : "Save Notification Record"}
             </Button>

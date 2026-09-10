@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { updateExpertReview } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { CheckSquare, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function ExpertReviewTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
+  const canEdit = userRole === "COLLECTOR";
 
   const siaRecord = project.siaRecords?.[0] || null;
 
@@ -19,14 +22,21 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canEdit) return;
     setLoading(true);
-    const formData = new FormData();
-    formData.append("expertGroupOutcome", outcome);
-    formData.append("expertGroupJustification", justification);
-    formData.append("expertGroup", expertGroup);
+    try {
+      const formData = new FormData();
+      formData.append("expertGroupOutcome", outcome);
+      formData.append("expertGroupJustification", justification);
+      formData.append("expertGroup", expertGroup);
 
-    await updateExpertReview(project.id, formData);
-    setLoading(false);
+      await updateExpertReview(project.id, formData);
+      showToast("success", "Expert Group decision recorded.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to record decision.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -48,7 +58,8 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
               type="text"
               value={expertGroup}
               onChange={(e) => setExpertGroup(e.target.value)}
-              className="input text-xs"
+              disabled={!canEdit}
+              className="input text-xs disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-paper"
               placeholder="e.g. State Independent Expert Group"
               required
             />
@@ -59,7 +70,8 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
             <select
               value={outcome}
               onChange={(e) => setOutcome(e.target.value)}
-              className="input text-xs font-semibold"
+              disabled={!canEdit}
+              className="input text-xs font-semibold disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-paper"
             >
               <option value="APPROVED">APPROVED — Proceed with Acquisition</option>
               <option value="MODIFIED">MODIFIED — Requires Project Extent Reduction</option>
@@ -74,7 +86,8 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
             rows={4}
             value={justification}
             onChange={(e) => setJustification(e.target.value)}
-            className="input text-xs"
+            disabled={!canEdit}
+            className="input text-xs disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-paper"
             placeholder="Document the formal reasoning, public purpose verification, and social impact mitigation measures required..."
             required
           />
@@ -100,8 +113,9 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
           </div>
         </div>
 
-        {userRole === "COLLECTOR" && (
-          <div className="flex justify-end">
+        {canEdit && (
+          <div className="flex items-center justify-end gap-3">
+            <ToastBanner toast={toast} />
             <Button type="submit" disabled={loading} className="text-xs px-5 py-2">
               {loading ? "Recording..." : "Record Expert Group Decision"}
             </Button>

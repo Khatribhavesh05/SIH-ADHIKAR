@@ -69,7 +69,7 @@ export default async function DocumentsPage() {
             Notification proofs, SIA reports, and award documents across projects in scope.
           </p>
         </div>
-        <Button variant="secondary" disabled title="Prototype — upload is decorative" className="w-full sm:w-auto justify-center">
+        <Button variant="secondary" disabled title="File upload coming soon" className="w-full sm:w-auto justify-center">
           Upload
         </Button>
       </div>

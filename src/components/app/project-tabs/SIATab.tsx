@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { updateSIAData } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { Users, FileCheck, AlertTriangle, Plus, Check } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function SIATab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
+  const canEdit = userRole === "COLLECTOR";
 
   const siaRecord = project.siaRecords?.[0] || null;
 
@@ -18,14 +21,21 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!canEdit) return;
     setLoading(true);
-    const formData = new FormData();
-    formData.append("publicHearingSummary", summary);
-    formData.append("isMultiCropFlagged", String(isMultiCrop));
-    formData.append("reportDocumentUrl", "SIA_Report_Final_2026.pdf");
+    try {
+      const formData = new FormData();
+      formData.append("publicHearingSummary", summary);
+      formData.append("isMultiCropFlagged", String(isMultiCrop));
+      formData.append("reportDocumentUrl", "SIA_Report_Final_2026.pdf");
 
-    await updateSIAData(project.id, formData);
-    setLoading(false);
+      await updateSIAData(project.id, formData);
+      showToast("success", "SIA record saved.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to save SIA record.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Simulated Public Hearing log items
@@ -57,7 +67,8 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
             <div className="flex items-center gap-3 mt-2">
               <input
                 type="file"
-                className="text-xs text-ink-muted file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white"
+                disabled={!canEdit}
+                className="text-xs text-ink-muted file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             {siaRecord?.reportDocumentUrl && (
@@ -79,7 +90,8 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
                 type="checkbox"
                 checked={isMultiCrop}
                 onChange={(e) => setIsMultiCrop(e.target.checked)}
-                className="w-4 h-4 rounded border-hairline-strong text-brand focus:ring-brand"
+                disabled={!canEdit}
+                className="w-4 h-4 rounded border-hairline-strong text-brand focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <span className="text-xs font-medium text-ink">
                 Project involves Multi-Crop Irrigated Agricultural Land
@@ -123,14 +135,16 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              className="input w-full text-xs"
+              disabled={!canEdit}
+              className="input w-full text-xs disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-paper"
               placeholder="Enter overall summary of public hearings and Gram Sabha consultations..."
             />
           </label>
         </div>
 
-        {userRole === "COLLECTOR" && (
-          <div className="flex justify-end">
+        {canEdit && (
+          <div className="flex items-center justify-end gap-3">
+            <ToastBanner toast={toast} />
             <Button type="submit" disabled={loading} className="text-xs px-5 py-2">
               {loading ? "Saving..." : "Save SIA Record & Advance"}
             </Button>

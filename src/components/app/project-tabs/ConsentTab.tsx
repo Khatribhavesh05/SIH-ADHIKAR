@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { incrementConsent } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { ShieldCheck, Plus, CheckCircle2, AlertCircle } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function ConsentTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   const consentRecord = project.consentRecord;
   if (!consentRecord) {
@@ -26,8 +28,14 @@ export function ConsentTab({ project, userRole }: { project: any; userRole: Role
 
   async function handleAddConsent(count: number = 1) {
     setLoading(true);
-    await incrementConsent(project.id, count);
-    setLoading(false);
+    try {
+      await incrementConsent(project.id, count);
+      showToast("success", `${count} consent${count === 1 ? "" : "s"} recorded.`);
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to record consent.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -89,7 +97,8 @@ export function ConsentTab({ project, userRole }: { project: any; userRole: Role
       </div>
 
       {userRole === "REQUIRING_BODY" && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ToastBanner toast={toast} />
           <Button
             onClick={() => handleAddConsent(1)}
             disabled={loading || collected >= total}

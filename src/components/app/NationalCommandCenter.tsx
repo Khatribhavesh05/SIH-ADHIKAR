@@ -43,11 +43,19 @@ export interface CommandProject {
   consentRecord: any;
 }
 
-export function NationalCommandCenter({ projects }: { projects: CommandProject[] }) {
+export function NationalCommandCenter({
+  projects,
+  interactive = true,
+}: {
+  projects: CommandProject[];
+  /** Set to false for public/logged-out previews — disables navigation into protected /projects/[id] routes. */
+  interactive?: boolean;
+}) {
   const [selectedState, setSelectedState] = useState<string>("ALL");
   const [severityFilter, setSeverityFilter] = useState<"ALL" | "CRITICAL" | "WARNING" | "INFO">("ALL");
   const [reportFormat, setReportFormat] = useState<"PDF" | "EXCEL">("PDF");
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
 
   // States list
   const states = useMemo(() => {
@@ -351,35 +359,88 @@ export function NationalCommandCenter({ projects }: { projects: CommandProject[]
           </p>
 
           <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[520px] pr-1">
-            {riskRankedProjects.map(({ project: p, daysLeft, reason }) => (
-              <Link
-                key={p.id}
-                href={`/projects/${p.id}`}
-                className="p-3 rounded border border-hairline hover:border-brand bg-paper hover:bg-brand-tint/30 transition-all block group"
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <div className="font-medium text-xs text-brand-dark group-hover:text-brand truncate">
-                    {p.title}
+            {riskRankedProjects.map(({ project: p, daysLeft, reason }) => {
+              const rowContent = (
+                <>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="font-medium text-xs text-brand-dark group-hover:text-brand truncate">
+                      {p.title}
+                    </div>
+                    <span className={`text-[11px] px-2 py-0.5 rounded font-mono-data font-bold shrink-0 ${
+                      daysLeft < 0 ? "bg-danger text-white" : daysLeft < 30 ? "bg-saffron text-white" : "bg-paper-raised border border-hairline text-ink"
+                    }`}>
+                      {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
+                    </span>
                   </div>
-                  <span className={`text-[11px] px-2 py-0.5 rounded font-mono-data font-bold shrink-0 ${
-                    daysLeft < 0 ? "bg-danger text-white" : daysLeft < 30 ? "bg-saffron text-white" : "bg-paper-raised border border-hairline text-ink"
-                  }`}>
-                    {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
-                  </span>
-                </div>
 
-                <div className="text-[11px] text-ink-muted mt-1">
-                  {p.district}, {p.state}
-                </div>
+                  <div className="text-[11px] text-ink-muted mt-1">
+                    {p.district}, {p.state}
+                  </div>
 
-                <div className="text-[11px] font-medium text-danger mt-1.5 leading-snug">
-                  • {reason}
-                </div>
-              </Link>
-            ))}
+                  <div className="text-[11px] font-medium text-danger mt-1.5 leading-snug">
+                    • {reason}
+                  </div>
+                </>
+              );
+
+              if (!interactive) {
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setShowSignInPrompt(true)}
+                    className="p-3 rounded border border-hairline hover:border-brand bg-paper hover:bg-brand-tint/30 transition-all block group text-left cursor-pointer"
+                  >
+                    {rowContent}
+                  </button>
+                );
+              }
+
+              return (
+                <Link
+                  key={p.id}
+                  href={`/projects/${p.id}`}
+                  className="p-3 rounded border border-hairline hover:border-brand bg-paper hover:bg-brand-tint/30 transition-all block group"
+                >
+                  {rowContent}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
+
+      {showSignInPrompt && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowSignInPrompt(false)}
+        >
+          <div
+            className="bg-paper-raised border border-hairline rounded-md shadow-lg p-6 max-w-sm w-full text-center flex flex-col gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-serif-heading text-lg font-semibold text-brand-dark">Sign in to view full project details</h3>
+            <p className="text-xs text-ink-muted">
+              This preview is read-only. Log in to the official portal to see notifications, SIA records, awards, and disbursement ledgers for this project.
+            </p>
+            <div className="flex items-center justify-center gap-3 mt-2">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-[var(--radius-sm)] bg-brand text-white text-xs font-semibold hover:bg-brand-dark transition-colors"
+              >
+                Sign in to Official Portal
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowSignInPrompt(false)}
+                className="px-4 py-2 rounded-[var(--radius-sm)] border border-hairline-strong text-xs font-medium text-ink hover:border-ink transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ALERTS FEED SECTION */}
       <div className="bg-paper-raised border border-hairline rounded-md p-4 shadow-xs flex flex-col gap-4">

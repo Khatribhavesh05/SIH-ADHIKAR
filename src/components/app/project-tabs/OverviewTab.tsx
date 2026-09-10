@@ -4,12 +4,15 @@ import { useState } from "react";
 import { formatDate, formatNumber } from "@/lib/domain/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { CheckCircle2, Lock, AlertCircle, Building2, MapPin, Layers } from "lucide-react";
 import { toggleRRCostDeposit } from "@/app/(app)/projects/actions";
 import type { Role } from "@/lib/domain/roles";
 
 export function OverviewTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
+  const canToggleDeposit = userRole === "REQUIRING_BODY";
 
   const affectedPersonCount = project.parcels.reduce(
     (sum: number, parcel: any) => sum + parcel.affectedPersons.length,
@@ -17,9 +20,16 @@ export function OverviewTab({ project, userRole }: { project: any; userRole: Rol
   );
 
   async function handleDepositToggle() {
+    if (!canToggleDeposit) return;
     setLoading(true);
-    await toggleRRCostDeposit(project.id, !project.rrCostDeposited);
-    setLoading(false);
+    try {
+      await toggleRRCostDeposit(project.id, !project.rrCostDeposited);
+      showToast("success", project.rrCostDeposited ? "Deposit confirmation revoked." : "R&R cost deposit confirmed.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to update deposit status.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -87,19 +97,22 @@ export function OverviewTab({ project, userRole }: { project: any; userRole: Rol
           </div>
         </div>
 
-        {(userRole === "REQUIRING_BODY" || userRole === "COLLECTOR") && (
-          <Button
-            onClick={handleDepositToggle}
-            disabled={loading}
-            variant={project.rrCostDeposited ? "secondary" : "primary"}
-            className="shrink-0 text-xs px-3 py-1.5 min-h-0"
-          >
-            {loading
-              ? "Updating..."
-              : project.rrCostDeposited
-              ? "Revoke Deposit Confirmation"
-              : "Confirm R&R Cost Deposit"}
-          </Button>
+        {canToggleDeposit && (
+          <div className="flex items-center gap-3 shrink-0">
+            <ToastBanner toast={toast} />
+            <Button
+              onClick={handleDepositToggle}
+              disabled={loading}
+              variant={project.rrCostDeposited ? "secondary" : "primary"}
+              className="shrink-0 text-xs px-3 py-1.5 min-h-0"
+            >
+              {loading
+                ? "Updating..."
+                : project.rrCostDeposited
+                ? "Revoke Deposit Confirmation"
+                : "Confirm R&R Cost Deposit"}
+            </Button>
+          </div>
         )}
       </div>
 

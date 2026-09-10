@@ -5,18 +5,27 @@ import { formatDate } from "@/lib/domain/format";
 import { toggleRRCostDeposit } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { Lock, CheckCircle2, ShieldAlert, Plus, Layers, UserCheck } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function DeclarationTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   const isDepositConfirmed = project.rrCostDeposited;
 
   async function handleToggleDeposit() {
+    if (userRole !== "REQUIRING_BODY") return;
     setLoading(true);
-    await toggleRRCostDeposit(project.id, !isDepositConfirmed);
-    setLoading(false);
+    try {
+      await toggleRRCostDeposit(project.id, !isDepositConfirmed);
+      showToast("success", isDepositConfirmed ? "Deposit confirmation revoked." : "R&R cost deposit confirmed.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to update deposit status.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -29,6 +38,8 @@ export function DeclarationTab({ project, userRole }: { project: any; userRole: 
           </p>
         </div>
       </div>
+
+      {userRole === "REQUIRING_BODY" && <ToastBanner toast={toast} />}
 
       {/* R&R Cost Deposit Statutory Gate Banner */}
       {!isDepositConfirmed ? (

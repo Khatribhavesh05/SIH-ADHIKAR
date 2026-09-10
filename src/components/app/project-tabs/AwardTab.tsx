@@ -4,20 +4,30 @@ import { useState } from "react";
 import { formatDate, formatNumber } from "@/lib/domain/format";
 import { updateDisputeStatus } from "@/app/(app)/projects/actions";
 import { Button, LinkButton } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { Award as AwardIcon, AlertTriangle, Calculator, CheckCircle2 } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function AwardTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
 
   const award = project.award;
   const [dispute, setDispute] = useState<string>(award?.disputeStatus || "NONE");
 
   async function handleDisputeChange(newStatus: string) {
+    const previous = dispute;
     setDispute(newStatus);
     setLoading(true);
-    await updateDisputeStatus(project.id, newStatus as any);
-    setLoading(false);
+    try {
+      await updateDisputeStatus(project.id, newStatus as any);
+      showToast("success", "Dispute status updated.");
+    } catch (err) {
+      setDispute(previous);
+      showToast("error", err instanceof Error ? err.message : "Failed to update dispute status.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -55,16 +65,19 @@ export function AwardTab({ project, userRole }: { project: any; userRole: Role }
             </div>
 
             {userRole === "COLLECTOR" || userRole === "REQUIRING_BODY" ? (
-              <select
-                value={dispute}
-                onChange={(e) => handleDisputeChange(e.target.value)}
-                disabled={loading}
-                className="input text-xs font-semibold"
-              >
-                <option value="NONE">NONE — No Dispute Filed</option>
-                <option value="FILED">FILED — Tribunal Case Pending (Sec 64)</option>
-                <option value="RESOLVED">RESOLVED — Dispute Settled / Dismissed</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <ToastBanner toast={toast} />
+                <select
+                  value={dispute}
+                  onChange={(e) => handleDisputeChange(e.target.value)}
+                  disabled={loading}
+                  className="input text-xs font-semibold"
+                >
+                  <option value="NONE">NONE — No Dispute Filed</option>
+                  <option value="FILED">FILED — Tribunal Case Pending (Sec 64)</option>
+                  <option value="RESOLVED">RESOLVED — Dispute Settled / Dismissed</option>
+                </select>
+              </div>
             ) : (
               <div className="font-semibold text-xs text-ink font-mono-data">
                 Status: {dispute}

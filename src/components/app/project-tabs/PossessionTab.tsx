@@ -4,11 +4,14 @@ import { useState } from "react";
 import { formatDate } from "@/lib/domain/format";
 import { updatePossessionDate } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { Home, Calendar, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
 
 export function PossessionTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const { toast, showToast } = useToast();
+  const canEdit = userRole === "COLLECTOR" || userRole === "REQUIRING_BODY";
   const possession = project.possession;
 
   const [dateStr, setDateStr] = useState<string>(
@@ -17,10 +20,16 @@ export function PossessionTab({ project, userRole }: { project: any; userRole: R
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!dateStr) return;
+    if (!dateStr || !canEdit) return;
     setLoading(true);
-    await updatePossessionDate(project.id, dateStr);
-    setLoading(false);
+    try {
+      await updatePossessionDate(project.id, dateStr);
+      showToast("success", "Possession date recorded.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to record possession date.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Calculate 5-year lapse countdown
@@ -55,15 +64,19 @@ export function PossessionTab({ project, userRole }: { project: any; userRole: R
               type="date"
               value={dateStr}
               onChange={(e) => setDateStr(e.target.value)}
-              className="input text-xs"
+              disabled={!canEdit}
+              className="input text-xs disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-paper"
               required
             />
           </label>
 
-          {(userRole === "COLLECTOR" || userRole === "REQUIRING_BODY") && (
-            <Button type="submit" disabled={loading || !dateStr} className="text-xs px-4 py-2 self-start">
-              {loading ? "Recording..." : "Record Possession Date"}
-            </Button>
+          {canEdit && (
+            <div className="flex flex-col items-start gap-2">
+              <Button type="submit" disabled={loading || !dateStr} className="text-xs px-4 py-2 self-start">
+                {loading ? "Recording..." : "Record Possession Date"}
+              </Button>
+              <ToastBanner toast={toast} />
+            </div>
           )}
         </form>
 
