@@ -1,7 +1,12 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  const host = request.headers.get("host") ?? "";
+  if (host.endsWith(".vercel.app")) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   return updateSession(request);
 }
 
