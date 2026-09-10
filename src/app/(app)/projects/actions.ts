@@ -2,10 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-role";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { awardDeadline, isRRCommitteeRequired, consentThresholdPercent } from "@/lib/domain/compensation";
-import type { AcquisitionRoute, ProjectType } from "@prisma/client";
+import { redirect } from "next/navigation";
+import { awardDeadline, lapseRiskDeadline, isRRCommitteeRequired, consentThresholdPercent } from "@/lib/domain/compensation";
+import type { AcquisitionRoute, ProjectType, ExpertGroupOutcome, DisputeStatus } from "@prisma/client";
 
 export async function createProject(formData: FormData) {
   const user = await requirePermission((p) => p.createProject);
@@ -45,7 +45,7 @@ export async function createProject(formData: FormData) {
     await prisma.consentRecord.create({
       data: {
         projectId: project.id,
-        affectedFamiliesTotal: 0,
+        affectedFamiliesTotal: Math.round(totalAreaAcres * 1.5),
         consentsCollected: 0,
         thresholdPercent: threshold,
       },
@@ -54,6 +54,155 @@ export async function createProject(formData: FormData) {
 
   revalidatePath("/projects");
   redirect(`/projects/${project.id}`);
+}
+
+export async function toggleRRCostDeposit(projectId: string, deposited: boolean) {
+  await requirePermission((p) => p.setDepositFlag);
+
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { rrCostDeposited: deposited },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/dashboard`);
+}
+
+export async function updateSIAData(projectId: string, formData: FormData) {
+  await requirePermission((p) => p.manageParcels);
+
+  const publicHearingSummary = String(formData.get("publicHearingSummary") ?? "").trim();
+  const isMultiCropFlagged = formData.get("isMultiCropFlagged") === "true";
+  const reportDocumentUrl = String(formData.get("reportDocumentUrl") ?? "SIA_Report_Final.pdf");
+
+  const existing = await prisma.sIARecord.findFirst({ where: { projectId } });
+
+  if (existing) {
+    await prisma.sIARecord.update({
+      where: { id: existing.id },
+      data: {
+        publicHearingSummary,
+        isMultiCropFlagged,
+        reportDocumentUrl,
+      },
+    });
+  } else {
+    await prisma.sIARecord.create({
+      data: {
+        projectId,
+        publicHearingSummary,
+        isMultiCropFlagged,
+        reportDocumentUrl,
+      },
+    });
+  }
+
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { currentStage: "STAGE_2_SIA" },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateExpertReview(projectId: string, formData: FormData) {
+  await requirePermission((p) => p.manageParcels);
+
+  const expertGroupOutcome = String(formData.get("expertGroupOutcome") ?? "APPROVED") as ExpertGroupOutcome;
+  const expertGroupJustification = String(formData.get("expertGroupJustification") ?? "").trim();
+
+  const existing = await prisma.sIARecord.findFirst({ where: { projectId } });
+
+  if (existing) {
+    await prisma.sIARecord.update({
+      where: { id: existing.id },
+      data: { expertGroupOutcome, expertGroupJustification },
+    });
+  } else {
+    await prisma.sIARecord.create({
+      data: {
+        projectId,
+        expertGroupOutcome,
+        expertGroupJustification,
+      },
+    });
+  }
+
+  if (expertGroupOutcome === "APPROVED") {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { currentStage: "STAGE_3_EXPERT_APPRAISAL" },
+    });
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function incrementConsent(projectId: string, incrementBy: number = 1) {
+  await requirePermission((p) => p.setConsentCount);
+
+  const record = await prisma.consentRecord.findUnique({ where: { projectId } });
+  if (!record) return;
+
+  const newCollected = Math.min(record.affectedFamiliesTotal, record.consentsCollected + incrementBy);
+  await prisma.consentRecord.update({
+    where: { projectId },
+    data: { consentsCollected: newCollected },
+  });
+
+  const percent = (newCollected / Math.max(1, record.affectedFamiliesTotal)) * 100;
+  if (percent >= Number(record.thresholdPercent)) {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { currentStage: "STAGE_4_CONSENT" },
+    });
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateDisputeStatus(projectId: string, disputeStatus: DisputeStatus) {
+  await requirePermission((p) => p.submitNotification);
+
+  const award = await prisma.award.findUnique({ where: { projectId } });
+  if (award) {
+    await prisma.award.update({
+      where: { projectId },
+      data: { disputeStatus },
+    });
+  }
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updatePossessionDate(projectId: string, dateStr: string) {
+  await requirePermission((p) => p.submitNotification);
+
+  const possessionDate = new Date(dateStr);
+  const award = await prisma.award.findUnique({ where: { projectId } });
+  const awardDate = award?.awardDate ?? new Date();
+  const lapseDeadline = lapseRiskDeadline(awardDate);
+
+  await prisma.possession.upsert({
+    where: { projectId },
+    update: {
+      possessionDate,
+      lapseRiskDeadline: lapseDeadline,
+      lapseStatus: "SAFE",
+    },
+    create: {
+      projectId,
+      possessionDate,
+      lapseRiskDeadline: lapseDeadline,
+      lapseStatus: "SAFE",
+    },
+  });
+
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { currentStage: "STAGE_8_POSSESSION" },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
 }
 
 export async function submitNotification(projectId: string, formData: FormData) {
@@ -65,7 +214,17 @@ export async function submitNotification(projectId: string, formData: FormData) 
   const publicationDate = new Date(String(formData.get("publicationDate")));
   const gazetteReference = String(formData.get("gazetteReference") ?? "").trim();
   const newspaperReference = String(formData.get("newspaperReference") ?? "").trim();
+  const noticeBoardProofUrl = String(formData.get("noticeBoardProofUrl") ?? "notice_board_proof.jpg");
   const objectionWindowDeadline = new Date(String(formData.get("objectionWindowDeadline")));
+
+  if (type === "DECLARATION_S19") {
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!project?.rrCostDeposited) {
+      throw new Error(
+        "Section 19(2) statutory gate: Declaration cannot be published until the Requiring Body has confirmed the R&R cost deposit."
+      );
+    }
+  }
 
   await prisma.notification.create({
     data: {
@@ -74,6 +233,7 @@ export async function submitNotification(projectId: string, formData: FormData) 
       publicationDate,
       gazetteReference,
       newspaperReference,
+      noticeBoardProofUrl,
       objectionWindowDeadline,
     },
   });
@@ -107,15 +267,5 @@ export async function submitNotification(projectId: string, formData: FormData) 
     data: { currentStage: nextStage },
   });
 
-  revalidatePath(`/projects/${projectId}`);
-  redirect(`/projects/${projectId}`);
-}
-
-export async function advanceStage(projectId: string, stage: string) {
-  await requirePermission((p) => p.submitNotification || p.manageParcels);
-  await prisma.project.update({
-    where: { id: projectId },
-    data: { currentStage: stage as never },
-  });
   revalidatePath(`/projects/${projectId}`);
 }

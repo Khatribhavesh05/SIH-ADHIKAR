@@ -24,6 +24,7 @@ export async function addParcel(projectId: string, formData: FormData) {
       isMultiCropIrrigated: landClassification === "AGRICULTURAL_MULTI_CROP_IRRIGATED",
       latitude: formData.get("latitude") ? parseFloat(String(formData.get("latitude"))) : null,
       longitude: formData.get("longitude") ? parseFloat(String(formData.get("longitude"))) : null,
+      ulpinId: String(formData.get("ulpinId") ?? "").trim() || null,
     },
   });
 

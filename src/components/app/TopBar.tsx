@@ -3,6 +3,7 @@ import { ROLE_LABELS, type Role } from "@/lib/domain/roles";
 import { AccountSwitcher } from "@/components/app/AccountSwitcher";
 import { SignOutButton } from "@/components/app/SignOutButton";
 import { MobileAccountMenu } from "@/components/app/MobileAccountMenu";
+import { GoogleTranslateWidget } from "@/components/app/GoogleTranslateWidget";
 import Link from "next/link";
 
 export function TopBar({
@@ -17,7 +18,7 @@ export function TopBar({
   onMenuClick: () => void;
 }) {
   return (
-    <header className="border-b border-hairline">
+    <header className="border-b border-hairline bg-paper-raised">
       <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 gap-2">
         <div className="flex items-center gap-1 sm:gap-2.5 min-w-0">
           {/* Hamburger — mobile only, opens the Sidebar drawer */}
@@ -35,26 +36,31 @@ export function TopBar({
 
           <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
             <GovSeal size={28} />
-            <span className="font-serif-heading font-semibold text-sm truncate">Adhikar</span>
+            <span className="font-serif-heading font-semibold text-sm truncate text-brand-dark">Adhikar</span>
           </Link>
         </div>
 
-        {/* Desktop: full identity block + switcher + sign out, inline */}
-        <div className="hidden md:flex items-center gap-4">
-          <div className="text-right leading-tight">
-            <div className="text-sm font-semibold">{name}</div>
-            <div className="text-xs text-brand font-medium">
-              {ROLE_LABELS[role]}
-              {jurisdiction ? ` · ${jurisdiction}` : ""}
-            </div>
-          </div>
-          <AccountSwitcher current={role} />
-          <SignOutButton />
-        </div>
+        {/* Right side: language toggle + user info */}
+        <div className="flex items-center gap-3">
+          <GoogleTranslateWidget />
 
-        {/* Mobile: everything collapsed into one account menu */}
-        <div className="md:hidden">
-          <MobileAccountMenu name={name} role={role} jurisdiction={jurisdiction} />
+          {/* Desktop: full identity block + switcher + sign out, inline */}
+          <div className="hidden md:flex items-center gap-4 border-l border-hairline pl-3">
+            <div className="text-right leading-tight">
+              <div className="text-sm font-semibold">{name}</div>
+              <div className="text-xs text-brand font-medium">
+                {ROLE_LABELS[role]}
+                {jurisdiction ? ` · ${jurisdiction}` : ""}
+              </div>
+            </div>
+            <AccountSwitcher current={role} />
+            <SignOutButton />
+          </div>
+
+          {/* Mobile: collapsed into account menu */}
+          <div className="md:hidden">
+            <MobileAccountMenu name={name} role={role} jurisdiction={jurisdiction} />
+          </div>
         </div>
       </div>
     </header>

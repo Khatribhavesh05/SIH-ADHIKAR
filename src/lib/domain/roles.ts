@@ -38,6 +38,8 @@ export const PERMISSIONS: Record<
     draftRRScheme: boolean;
     reviewRRScheme: boolean;
     approveRRScheme: boolean;
+    setDepositFlag: boolean;
+    setConsentCount: boolean;
     deadlineScope: "own_projects" | "own_district" | "own_state" | "national";
     analyticsScope: "none" | "district" | "state" | "national";
   }
@@ -51,6 +53,8 @@ export const PERMISSIONS: Record<
     draftRRScheme: false,
     reviewRRScheme: false,
     approveRRScheme: false,
+    setDepositFlag: true,
+    setConsentCount: true,
     deadlineScope: "own_projects",
     analyticsScope: "none",
   },
@@ -63,6 +67,8 @@ export const PERMISSIONS: Record<
     draftRRScheme: false,
     reviewRRScheme: true,
     approveRRScheme: false,
+    setDepositFlag: false,
+    setConsentCount: false,
     deadlineScope: "own_district",
     analyticsScope: "district",
   },
@@ -75,6 +81,8 @@ export const PERMISSIONS: Record<
     draftRRScheme: true,
     reviewRRScheme: false,
     approveRRScheme: false,
+    setDepositFlag: false,
+    setConsentCount: false,
     deadlineScope: "own_district",
     analyticsScope: "none",
   },
@@ -87,6 +95,8 @@ export const PERMISSIONS: Record<
     draftRRScheme: false,
     reviewRRScheme: false,
     approveRRScheme: true,
+    setDepositFlag: false,
+    setConsentCount: false,
     deadlineScope: "own_state",
     analyticsScope: "state",
   },
@@ -99,6 +109,8 @@ export const PERMISSIONS: Record<
     draftRRScheme: false,
     reviewRRScheme: false,
     approveRRScheme: false,
+    setDepositFlag: false,
+    setConsentCount: false,
     deadlineScope: "national",
     analyticsScope: "national",
   },

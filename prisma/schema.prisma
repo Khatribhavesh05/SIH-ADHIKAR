@@ -173,6 +173,7 @@ model LandParcel {
   isMultiCropIrrigated   Boolean             @default(false)
   latitude               Decimal?            @db.Decimal(9, 6)
   longitude              Decimal?            @db.Decimal(9, 6)
+  ulpinId                String?
   createdAt              DateTime            @default(now())
 
   affectedPersons        AffectedPerson[]

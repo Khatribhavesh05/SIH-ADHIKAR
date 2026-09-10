@@ -1,30 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Source_Serif_4, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { PWARegister } from "@/components/app/PWARegister";
 import "./globals.css";
 
-const sourceSerif = Source_Serif_4({
-  variable: "--font-serif",
-  subsets: ["latin"],
-  weight: ["600", "700"],
-});
-
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
-
 export const metadata: Metadata = {
-  title: "Adhikar — Land Acquisition & Management System",
+  title: "Adhikar — National Land Acquisition Management System",
   description:
-    "National platform for digitizing India's RFCTLARR land acquisition process — notifications, compensation, deadlines, and rehabilitation tracking.",
+    "Real-time land acquisition command center digitizing India's RFCTLARR Act 2013 statutory processes, deadlines, compensation, and rehabilitation.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -36,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4a2bc2",
+  themeColor: "#002b49",
   width: "device-width",
   initialScale: 1,
 };
@@ -47,10 +28,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${sourceSerif.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-paper text-ink">
         {children}
         <PWARegister />

@@ -1,9 +1,10 @@
 import { getCurrentUser } from "@/lib/auth";
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { projectScopeWhere } from "@/lib/queries/scope";
 import { PERMISSIONS, ROLE_LABELS } from "@/lib/domain/roles";
-import { riskStatusForDeadline, AT_RISK_WINDOW_MONTHS } from "@/lib/domain/compensation";
+import { NationalCommandCenter } from "@/components/app/NationalCommandCenter";
 import { Panel } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
 import { LinkButton } from "@/components/ui/Button";
@@ -23,25 +24,43 @@ export default async function DashboardPage() {
   const where = projectScopeWhere(user.role, user);
   const projects = await prisma.project.findMany({
     where,
-    include: { award: true, possession: true },
+    include: {
+      award: {
+        include: {
+          disbursements: { include: { claimant: true } },
+        },
+      },
+      possession: true,
+      parcels: { include: { affectedPersons: true } },
+      consentRecord: true,
+    },
     orderBy: { createdAt: "desc" },
-    take: 50,
   });
 
   const totalArea = projects.reduce((sum, p) => sum + Number(p.totalAreaAcres), 0);
 
-  const awardsAtRisk = projects.filter((p) => {
-    if (!p.award || p.award.awardDate) return false;
-    const status = riskStatusForDeadline(p.award.awardDeadline, AT_RISK_WINDOW_MONTHS);
-    return status !== "SAFE";
-  }).length;
+  // If user is Central Ministry Viewer (or when viewing national level command center), show full National Command Center
+  if (user.role === "CENTRAL_MINISTRY_VIEWER" || perm.analyticsScope === "national") {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-hairline">
+          <div>
+            <h1 className="font-serif-heading text-2xl font-bold text-brand-dark">
+              National Land Acquisition Command Center
+            </h1>
+            <p className="text-xs text-ink-muted mt-0.5">
+              Ministry of Rural Development · Dept of Land Resources Real-Time Statutory Oversight
+            </p>
+          </div>
+          <Badge tone="brand">Central Ministry Oversight</Badge>
+        </div>
 
-  const lapseAtRisk = projects.filter((p) => {
-    if (!p.possession?.lapseRiskDeadline || p.possession.possessionDate) return false;
-    const status = riskStatusForDeadline(p.possession.lapseRiskDeadline, AT_RISK_WINDOW_MONTHS);
-    return status !== "SAFE";
-  }).length;
+        <NationalCommandCenter projects={projects as any} />
+      </div>
+    );
+  }
 
+  // Scoped District / Collector / Requiring Body Dashboard view
   const scopeLabel: Record<string, string> = {
     own_projects: "your projects",
     own_district: `${user.jurisdictionDistrict ?? "your district"}`,
@@ -55,7 +74,7 @@ export default async function DashboardPage() {
       header: "Title",
       primary: true,
       render: (p) => (
-        <Link href={`/projects/${p.id}`} className="text-brand hover:underline font-medium">
+        <Link href={`/projects/${p.id}`} className="text-brand hover:underline font-semibold">
           {p.title}
         </Link>
       ),
@@ -75,38 +94,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-hairline">
         <div>
-          <h1 className="font-serif-heading text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-ink-muted mt-1">
+          <h1 className="font-serif-heading text-2xl font-bold text-brand-dark">
+            {user.role === "COLLECTOR" ? "My District Command Dashboard" : "Project Dashboard"}
+          </h1>
+          <p className="text-xs text-ink-muted mt-0.5">
             {ROLE_LABELS[user.role]} view · scoped to {scopeLabel[perm.deadlineScope]}
           </p>
         </div>
         {perm.createProject && (
           <LinkButton href="/projects/new" className="w-full sm:w-auto justify-center">
-            New Project
+            + New Project
           </LinkButton>
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard label="Projects in scope" value={formatNumber(projects.length)} />
-        <StatCard label="Total area (acres)" value={formatNumber(totalArea)} />
-        <StatCard
-          label="Approaching / overdue award deadline"
-          value={formatNumber(awardsAtRisk)}
-          tone={awardsAtRisk > 0 ? "warning" : "success"}
-        />
-        <StatCard
-          label="Approaching / overdue lapse deadline"
-          value={formatNumber(lapseAtRisk)}
-          tone={lapseAtRisk > 0 ? "danger" : "success"}
-        />
-      </div>
+      <NationalCommandCenter projects={projects as any} />
 
       <Panel raised>
         <div className="px-4 sm:px-5 py-4 border-b border-hairline flex items-center justify-between">
-          <h2 className="font-medium text-sm">Projects</h2>
+          <h2 className="font-medium text-sm">Projects List ({projects.length})</h2>
           <Link href="/projects" className="text-sm text-brand hover:underline">
             View all →
           </Link>
@@ -119,31 +127,5 @@ export default async function DashboardPage() {
         />
       </Panel>
     </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "success" | "warning" | "danger";
-}) {
-  const toneClass =
-    tone === "danger"
-      ? "text-[var(--color-danger)]"
-      : tone === "warning"
-      ? "text-[var(--color-warning)]"
-      : tone === "success"
-      ? "text-[var(--color-success)]"
-      : "text-ink";
-
-  return (
-    <Panel className="p-3 sm:p-4">
-      <div className="text-xs text-ink-muted mb-1.5">{label}</div>
-      <div className={`font-mono-data text-xl sm:text-2xl font-semibold ${toneClass}`}>{value}</div>
-    </Panel>
   );
 }

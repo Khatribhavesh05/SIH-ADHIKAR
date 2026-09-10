@@ -8,17 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { formatNumber } from "@/lib/domain/format";
 import { addParcel, addAffectedPerson } from "./actions";
+import { ULPINFetchForm } from "@/components/app/ULPINFetchForm";
 import type { AffectedPerson } from "@prisma/client";
-
-const LAND_CLASSIFICATIONS = [
-  ["AGRICULTURAL_MULTI_CROP_IRRIGATED", "Agricultural — Multi-crop irrigated"],
-  ["AGRICULTURAL_SINGLE_CROP", "Agricultural — Single crop"],
-  ["AGRICULTURAL_UNIRRIGATED", "Agricultural — Unirrigated"],
-  ["NON_AGRICULTURAL", "Non-agricultural"],
-  ["BARREN", "Barren"],
-  ["FOREST", "Forest"],
-  ["OTHER", "Other"],
-] as const;
 
 const AFFECTED_PERSON_ROLES = [
   ["OWNER", "Owner"],
@@ -70,30 +61,14 @@ export default async function ParcelsPage({
 
       <Panel raised>
         <PanelHeader>
-          <h2 className="font-medium text-sm">Add parcel</h2>
+          <h2 className="font-medium text-sm">Add Parcel &amp; Fetch Land Record</h2>
         </PanelHeader>
         <PanelBody>
-          <form action={addParcelAction} className="grid md:grid-cols-3 gap-4">
-            <Field label="Survey number"><input name="surveyNumber" required className="input" /></Field>
-            <Field label="Khasra number"><input name="khasraNumber" required className="input" /></Field>
-            <Field label="Khata number"><input name="khataNumber" required className="input" /></Field>
-            <Field label="Village"><input name="village" required className="input" /></Field>
-            <Field label="Tehsil"><input name="tehsil" required className="input" /></Field>
-            <Field label="District"><input name="district" required defaultValue={project.district} className="input" /></Field>
-            <Field label="Area (acres)"><input name="areaAcres" type="number" step="0.01" min="0" required className="input font-mono-data" /></Field>
-            <Field label="Land classification">
-              <select name="landClassification" required className="input" defaultValue="">
-                <option value="" disabled>Select</option>
-                {LAND_CLASSIFICATIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </Field>
-            <div />
-            <Field label="Latitude (optional)"><input name="latitude" type="number" step="0.000001" className="input font-mono-data" /></Field>
-            <Field label="Longitude (optional)"><input name="longitude" type="number" step="0.000001" className="input font-mono-data" /></Field>
-            <div className="flex items-end">
-              <Button type="submit" className="w-full">Add Parcel</Button>
-            </div>
-          </form>
+          <ULPINFetchForm
+            projectId={project.id}
+            districtDefault={project.district}
+            onAddAction={addParcelAction}
+          />
         </PanelBody>
       </Panel>
 
@@ -126,18 +101,18 @@ export default async function ParcelsPage({
                   />
                 </div>
 
-                <form action={addPersonAction} className="grid md:grid-cols-5 gap-3 items-end border-t border-hairline pt-4">
-                  <Field label="Name"><input name="name" required className="input" /></Field>
+                <form action={addPersonAction} className="grid md:grid-cols-5 gap-3 items-end border-t border-hairline pt-4 text-xs">
+                  <Field label="Name"><input name="name" required className="input text-xs" /></Field>
                   <Field label="Role">
-                    <select name="role" required className="input font-medium">
+                    <select name="role" required className="input text-xs font-medium">
                       {AFFECTED_PERSON_ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   </Field>
-                  <Field label="Claim amount (₹)"><input name="compensationClaimAmount" type="number" step="0.01" className="input font-mono-data" /></Field>
-                  <label className="flex items-center gap-2 text-sm pb-2">
+                  <Field label="Claim amount (₹)"><input name="compensationClaimAmount" type="number" step="0.01" className="input text-xs font-mono-data" /></Field>
+                  <label className="flex items-center gap-2 text-xs pb-2">
                     <input type="checkbox" name="scStStatus" /> SC/ST status
                   </label>
-                  <Button type="submit" variant="secondary">Add Person</Button>
+                  <Button type="submit" variant="secondary" className="text-xs py-2">Add Person</Button>
                 </form>
               </PanelBody>
             </Panel>
@@ -154,7 +129,7 @@ export default async function ParcelsPage({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-xs font-medium">{label}</span>
       {children}
     </label>
   );
