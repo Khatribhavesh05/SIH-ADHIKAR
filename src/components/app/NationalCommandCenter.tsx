@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConnectedSystemsWidget } from "@/components/app/ConnectedSystemsWidget";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
-import { generateNationalReportPdf } from "@/lib/reports/nationalReport";
 import {
   AlertTriangle,
   TrendingUp,
@@ -43,30 +42,6 @@ export interface CommandProject {
   possession: any;
   parcels: any[];
   consentRecord: any;
-}
-
-function downloadRiskListCsv(
-  scopeLabel: string,
-  rows: { project: CommandProject; daysLeft: number; reason: string }[]
-) {
-  const header = ["Project Name", "State", "District", "Days Overdue/Remaining", "Status", "Reason"];
-  const csvRows = rows.map(({ project: p, daysLeft, reason }) => [
-    p.title,
-    p.state,
-    p.district,
-    daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d remaining`,
-    daysLeft < 0 ? "Overdue" : daysLeft < 30 ? "Upcoming Deadline" : "On Track",
-    reason,
-  ]);
-  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-  const csv = [header, ...csvRows].map((r) => r.map(escape).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `adhikar-national-report-${scopeLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 export function NationalCommandCenter({
@@ -251,36 +226,42 @@ export function NationalCommandCenter({
     const scopeLabel = selectedState === "ALL" ? "Nationwide" : selectedState;
     setGeneratingReport(true);
 
+    const reportData = {
+      scopeLabel,
+      kpis: {
+        totalProjects,
+        areaAcquiredAcres: Math.round(areaAcquired),
+        areaNotifiedAcres: Math.round(totalAreaNotified),
+        areaAcquiredPercent,
+        compensationDisbursedCr: compensationDisbursedRupees / 10000000,
+        compensationAssessedCr: compensationAssessedRupees / 10000000,
+        compensationPercent,
+        familiesResettled: resettledFamilies,
+        familiesTotal: totalFamilies,
+        resettledPercent,
+        costOfDelayCr: Number(costOfDelayCr),
+      },
+      riskRows: riskRankedProjects.map(({ project: p, daysLeft }) => ({
+        title: p.title,
+        state: p.state,
+        daysLeft,
+      })),
+    };
+
     // Yield a frame so the "Exporting Report..." state actually paints before
-    // the (synchronous) PDF generation blocks the main thread.
-    window.setTimeout(() => {
+    // generation blocks the main thread. jsPDF and ExcelJS are both sizable
+    // (~150-250kB) and only ever needed here, so they're code-split out of
+    // the initial dashboard bundle and loaded on demand.
+    window.setTimeout(async () => {
       try {
         if (reportFormat === "PDF") {
-          generateNationalReportPdf({
-            scopeLabel,
-            kpis: {
-              totalProjects,
-              areaAcquiredAcres: Math.round(areaAcquired),
-              areaNotifiedAcres: Math.round(totalAreaNotified),
-              areaAcquiredPercent,
-              compensationDisbursedCr: compensationDisbursedRupees / 10000000,
-              compensationAssessedCr: compensationAssessedRupees / 10000000,
-              compensationPercent,
-              familiesResettled: resettledFamilies,
-              familiesTotal: totalFamilies,
-              resettledPercent,
-              costOfDelayCr: Number(costOfDelayCr),
-            },
-            riskRows: riskRankedProjects.map(({ project: p, daysLeft }) => ({
-              title: p.title,
-              state: p.state,
-              daysLeft,
-            })),
-          });
+          const { generateNationalReportPdf } = await import("@/lib/reports/nationalReport");
+          generateNationalReportPdf(reportData);
         } else {
-          downloadRiskListCsv(scopeLabel, riskRankedProjects);
+          const { generateNationalReportXlsx } = await import("@/lib/reports/nationalReportXlsx");
+          await generateNationalReportXlsx(reportData);
         }
-        showToast("success", `${scopeLabel} report exported as ${reportFormat === "PDF" ? "PDF" : "CSV spreadsheet"}.`);
+        showToast("success", `${scopeLabel} report exported as ${reportFormat === "PDF" ? "PDF" : "Excel spreadsheet"}.`);
       } catch (err) {
         console.error("Report generation failed", err);
         showToast("error", "Report generation failed. Please try again.");

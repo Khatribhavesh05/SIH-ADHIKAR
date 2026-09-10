@@ -17,6 +17,7 @@
     "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.109.0",
     "@vis.gl/react-google-maps": "^1.10.0",
+    "exceljs": "^4.4.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.41.0",
