@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/domain/roles";
+import { projectScopeWhere } from "@/lib/queries/scope";
 import { Panel, PanelHeader, PanelBody } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -37,8 +38,8 @@ export default async function RRPage({
   if (!user) redirect("/login");
   const perm = PERMISSIONS[user.role];
 
-  const project = await prisma.project.findUnique({
-    where: { id },
+  const project = await prisma.project.findFirst({
+    where: { id, ...projectScopeWhere(user.role, user) },
     include: {
       rrScheme: {
         include: {

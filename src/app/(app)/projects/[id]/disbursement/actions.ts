@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-role";
+import { assertProjectInScope } from "@/lib/queries/scope";
 import { revalidatePath } from "next/cache";
 import { calculateDisbursementDelay } from "@/lib/domain/compensation";
 
@@ -11,7 +12,8 @@ export async function upsertDisbursement(
   claimantId: string,
   formData: FormData
 ) {
-  await requirePermission((p) => p.markDisbursement);
+  const user = await requirePermission((p) => p.markDisbursement);
+  await assertProjectInScope(user, projectId);
 
   const disbursedAmount = parseFloat(String(formData.get("disbursedAmount") ?? "0"));
   const disbursementDateStr = String(formData.get("disbursementDate") ?? "");

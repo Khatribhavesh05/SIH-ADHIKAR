@@ -11,7 +11,7 @@ import type { Role } from "@/lib/domain/roles";
 export function PossessionTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
   const { toast, showToast } = useToast();
-  const canEdit = userRole === "COLLECTOR" || userRole === "REQUIRING_BODY";
+  const canEdit = userRole === "COLLECTOR";
   const possession = project.possession;
 
   const [dateStr, setDateStr] = useState<string>(

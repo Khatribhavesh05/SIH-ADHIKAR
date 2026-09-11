@@ -25,6 +25,15 @@ const supabaseAdmin = createClient(
 
 const DEMO_PASSWORD = "Demo@12345";
 
+// Requiring Body's "your projects" scope (see own_projects case in
+// src/lib/queries/scope.ts) is keyed on literal project ownership
+// (createdByUserId), matching one project per real-world Requiring Body
+// account. This seed script has only one demo REQUIRING_BODY login for
+// all 18 seeded projects, so only the project it's meant to represent in
+// the demo narrative gets tied to it — otherwise the demo account would
+// (incorrectly) show up as creator of every project in the dataset.
+const RB_DEMO_OWNED_PROJECT_TITLE = "Patna Riverfront Flood Barrier";
+
 const DEMO_USERS = [
   { email: "requiringbody@demo.gov.in", name: "Anil Kulkarni", role: "REQUIRING_BODY" as const, state: "Maharashtra", district: null },
   { email: "collector@demo.gov.in", name: "Priya Nair", role: "COLLECTOR" as const, state: "Maharashtra", district: "Nashik" },
@@ -166,7 +175,7 @@ async function main() {
         district: seed.district,
         totalAreaAcres: seed.totalAreaAcres,
         currentStage: seed.currentStage,
-        createdByUserId: requiringBodyUser.id,
+        createdByUserId: seed.title === RB_DEMO_OWNED_PROJECT_TITLE ? requiringBodyUser.id : null,
         rrScheme: {
           create: {
             rrCommitteeRequired: isRRCommitteeRequired(seed.totalAreaAcres),

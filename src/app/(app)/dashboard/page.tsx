@@ -58,7 +58,7 @@ export default async function DashboardPage() {
           <Badge tone="brand">Central Ministry Oversight</Badge>
         </div>
 
-        <NationalCommandCenter projects={projects as any} />
+        <NationalCommandCenter projects={projects as any} canGenerateReport />
       </div>
     );
   }

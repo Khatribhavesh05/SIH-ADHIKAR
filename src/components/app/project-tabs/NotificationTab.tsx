@@ -44,7 +44,7 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
             Section 11 Preliminary Notification and Section 19 Declaration publishing records.
           </p>
         </div>
-        {(userRole === "COLLECTOR" || userRole === "REQUIRING_BODY") && (
+        {userRole === "COLLECTOR" && (
           <Button
             onClick={() => setShowForm(!showForm)}
             variant="secondary"

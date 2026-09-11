@@ -32,6 +32,7 @@ export const PERMISSIONS: Record<
   {
     createProject: boolean;
     submitNotification: boolean;
+    editDisputeStatus: boolean;
     manageParcels: boolean;
     compensationCalculator: Access;
     markDisbursement: boolean;
@@ -40,13 +41,15 @@ export const PERMISSIONS: Record<
     approveRRScheme: boolean;
     setDepositFlag: boolean;
     setConsentCount: boolean;
+    recordPossession: boolean;
     deadlineScope: "own_projects" | "own_district" | "own_state" | "national";
     analyticsScope: "none" | "district" | "state" | "national";
   }
 > = {
   REQUIRING_BODY: {
     createProject: true,
-    submitNotification: true,
+    submitNotification: false,
+    editDisputeStatus: true,
     manageParcels: false,
     compensationCalculator: "view",
     markDisbursement: false,
@@ -55,12 +58,14 @@ export const PERMISSIONS: Record<
     approveRRScheme: false,
     setDepositFlag: true,
     setConsentCount: true,
+    recordPossession: false,
     deadlineScope: "own_projects",
     analyticsScope: "none",
   },
   COLLECTOR: {
     createProject: false,
     submitNotification: true,
+    editDisputeStatus: true,
     manageParcels: true,
     compensationCalculator: "edit",
     markDisbursement: true,
@@ -69,12 +74,14 @@ export const PERMISSIONS: Record<
     approveRRScheme: false,
     setDepositFlag: false,
     setConsentCount: false,
+    recordPossession: true,
     deadlineScope: "own_district",
     analyticsScope: "district",
   },
   RR_ADMINISTRATOR: {
     createProject: false,
     submitNotification: false,
+    editDisputeStatus: false,
     manageParcels: false,
     compensationCalculator: "none",
     markDisbursement: false,
@@ -83,12 +90,14 @@ export const PERMISSIONS: Record<
     approveRRScheme: false,
     setDepositFlag: false,
     setConsentCount: false,
+    recordPossession: false,
     deadlineScope: "own_district",
     analyticsScope: "none",
   },
   RR_COMMISSIONER: {
     createProject: false,
     submitNotification: false,
+    editDisputeStatus: false,
     manageParcels: false,
     compensationCalculator: "none",
     markDisbursement: false,
@@ -97,12 +106,14 @@ export const PERMISSIONS: Record<
     approveRRScheme: true,
     setDepositFlag: false,
     setConsentCount: false,
+    recordPossession: false,
     deadlineScope: "own_state",
     analyticsScope: "state",
   },
   CENTRAL_MINISTRY_VIEWER: {
     createProject: false,
     submitNotification: false,
+    editDisputeStatus: false,
     manageParcels: false,
     compensationCalculator: "view",
     markDisbursement: false,
@@ -111,6 +122,7 @@ export const PERMISSIONS: Record<
     approveRRScheme: false,
     setDepositFlag: false,
     setConsentCount: false,
+    recordPossession: false,
     deadlineScope: "national",
     analyticsScope: "national",
   },

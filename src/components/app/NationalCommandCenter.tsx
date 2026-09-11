@@ -47,10 +47,13 @@ export interface CommandProject {
 export function NationalCommandCenter({
   projects,
   interactive = true,
+  canGenerateReport = false,
 }: {
   projects: CommandProject[];
   /** Set to false for public/logged-out previews — disables navigation into protected /projects/[id] routes. */
   interactive?: boolean;
+  /** Only Central Ministry Viewer gets the national report generator — everyone else's `projects` here is already role-scoped, so a report built from it would misleadingly look "national." */
+  canGenerateReport?: boolean;
 }) {
   const [selectedState, setSelectedState] = useState<string>("ALL");
   const [severityFilter, setSeverityFilter] = useState<"ALL" | "CRITICAL" | "WARNING" | "INFO">("ALL");
@@ -541,38 +544,40 @@ export function NationalCommandCenter({
         )}
       </div>
 
-      {/* REPORTS SECTION */}
-      <div className="bg-paper-raised border border-hairline rounded-md p-4 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 className="font-semibold text-sm text-brand-dark flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-brand" /> Generate Executive National Report
-          </h2>
-          <p className="text-xs text-ink-muted mt-0.5">
-            Export comprehensive statutory audit reports across states, ministries, and financial compliance parameters.
-          </p>
-        </div>
+      {/* REPORTS SECTION — Ministry Viewer only: everyone else's `projects` is already role-scoped, not national */}
+      {canGenerateReport && (
+        <div className="bg-paper-raised border border-hairline rounded-md p-4 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <h2 className="font-semibold text-sm text-brand-dark flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-brand" /> Generate Executive National Report
+            </h2>
+            <p className="text-xs text-ink-muted mt-0.5">
+              Export comprehensive statutory audit reports across states, ministries, and financial compliance parameters.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <select
-            value={reportFormat}
-            onChange={(e) => setReportFormat(e.target.value as any)}
-            className="input text-xs"
-          >
-            <option value="PDF">PDF Report Document</option>
-            <option value="EXCEL">Excel Data Spreadsheet (.xlsx)</option>
-          </select>
+          <div className="flex items-center gap-3 shrink-0">
+            <select
+              value={reportFormat}
+              onChange={(e) => setReportFormat(e.target.value as any)}
+              className="input text-xs"
+            >
+              <option value="PDF">PDF Report Document</option>
+              <option value="EXCEL">Excel Data Spreadsheet (.xlsx)</option>
+            </select>
 
-          <Button
-            onClick={handleGenerateReport}
-            disabled={generatingReport}
-            variant="primary"
-            className="text-xs px-4 py-2 min-h-0"
-          >
-            <Download className="w-3.5 h-3.5 mr-1.5" />
-            {generatingReport ? "Exporting Report..." : "Generate Report"}
-          </Button>
+            <Button
+              onClick={handleGenerateReport}
+              disabled={generatingReport}
+              variant="primary"
+              className="text-xs px-4 py-2 min-h-0"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              {generatingReport ? "Exporting Report..." : "Generate Report"}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/domain/roles";
+import { projectScopeWhere } from "@/lib/queries/scope";
 import { Panel, PanelHeader, PanelBody } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -44,8 +45,8 @@ export default async function ParcelsPage({
   if (!user) redirect("/login");
   if (!PERMISSIONS[user.role].manageParcels) redirect(`/projects/${id}`);
 
-  const project = await prisma.project.findUnique({
-    where: { id },
+  const project = await prisma.project.findFirst({
+    where: { id, ...projectScopeWhere(user.role, user) },
     include: { parcels: { include: { affectedPersons: true }, orderBy: { createdAt: "asc" } } },
   });
   if (!project) notFound();

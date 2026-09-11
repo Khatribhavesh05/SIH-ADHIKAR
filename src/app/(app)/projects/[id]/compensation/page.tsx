@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/domain/roles";
+import { projectScopeWhere } from "@/lib/queries/scope";
 import { CompensationCalculatorForm } from "@/components/app/CompensationCalculatorForm";
 import { saveAward } from "./actions";
 
@@ -16,8 +17,8 @@ export default async function CompensationPage({
   const access = PERMISSIONS[user.role].compensationCalculator;
   if (access === "none") redirect(`/projects/${id}`);
 
-  const project = await prisma.project.findUnique({
-    where: { id },
+  const project = await prisma.project.findFirst({
+    where: { id, ...projectScopeWhere(user.role, user) },
     include: { award: true, notifications: { orderBy: { publicationDate: "asc" }, take: 1 } },
   });
   if (!project) notFound();

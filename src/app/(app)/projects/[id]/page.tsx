@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { serializeDecimals } from "@/lib/serialize";
+import { projectScopeWhere } from "@/lib/queries/scope";
 import { ProjectTabsContainer } from "@/components/app/project-tabs/ProjectTabsContainer";
 import { Badge } from "@/components/ui/Badge";
 import { formatNumber } from "@/lib/domain/format";
@@ -16,8 +17,8 @@ export default async function ProjectDetailPage({
   if (!user) redirect("/login");
 
   const project = serializeDecimals(
-    await prisma.project.findUnique({
-      where: { id },
+    await prisma.project.findFirst({
+      where: { id, ...projectScopeWhere(user.role, user) },
       include: {
         notifications: { orderBy: { publicationDate: "desc" } },
         parcels: { include: { affectedPersons: true } },

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-role";
+import { assertProjectInScope } from "@/lib/queries/scope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { awardDeadline, lapseRiskDeadline, isRRCommitteeRequired, consentThresholdPercent } from "@/lib/domain/compensation";
@@ -57,7 +58,8 @@ export async function createProject(formData: FormData) {
 }
 
 export async function toggleRRCostDeposit(projectId: string, deposited: boolean) {
-  await requirePermission((p) => p.setDepositFlag);
+  const user = await requirePermission((p) => p.setDepositFlag);
+  await assertProjectInScope(user, projectId);
 
   await prisma.project.update({
     where: { id: projectId },
@@ -69,7 +71,8 @@ export async function toggleRRCostDeposit(projectId: string, deposited: boolean)
 }
 
 export async function updateSIAData(projectId: string, formData: FormData) {
-  await requirePermission((p) => p.manageParcels);
+  const user = await requirePermission((p) => p.manageParcels);
+  await assertProjectInScope(user, projectId);
 
   const publicHearingSummary = String(formData.get("publicHearingSummary") ?? "").trim();
   const isMultiCropFlagged = formData.get("isMultiCropFlagged") === "true";
@@ -106,7 +109,8 @@ export async function updateSIAData(projectId: string, formData: FormData) {
 }
 
 export async function updateExpertReview(projectId: string, formData: FormData) {
-  await requirePermission((p) => p.manageParcels);
+  const user = await requirePermission((p) => p.manageParcels);
+  await assertProjectInScope(user, projectId);
 
   const expertGroupOutcome = String(formData.get("expertGroupOutcome") ?? "APPROVED") as ExpertGroupOutcome;
   const expertGroupJustification = String(formData.get("expertGroupJustification") ?? "").trim();
@@ -162,7 +166,8 @@ export async function incrementConsent(projectId: string, incrementBy: number = 
 }
 
 export async function updateDisputeStatus(projectId: string, disputeStatus: DisputeStatus) {
-  await requirePermission((p) => p.submitNotification);
+  const user = await requirePermission((p) => p.editDisputeStatus);
+  await assertProjectInScope(user, projectId);
 
   const award = await prisma.award.findUnique({ where: { projectId } });
   if (award) {
@@ -175,7 +180,8 @@ export async function updateDisputeStatus(projectId: string, disputeStatus: Disp
 }
 
 export async function updatePossessionDate(projectId: string, dateStr: string) {
-  await requirePermission((p) => p.submitNotification);
+  const user = await requirePermission((p) => p.recordPossession);
+  await assertProjectInScope(user, projectId);
 
   const possessionDate = new Date(dateStr);
   const award = await prisma.award.findUnique({ where: { projectId } });
@@ -206,7 +212,8 @@ export async function updatePossessionDate(projectId: string, dateStr: string) {
 }
 
 export async function submitNotification(projectId: string, formData: FormData) {
-  await requirePermission((p) => p.submitNotification);
+  const user = await requirePermission((p) => p.submitNotification);
+  await assertProjectInScope(user, projectId);
 
   const type = String(formData.get("type") ?? "PRELIMINARY_S11") as
     | "PRELIMINARY_S11"

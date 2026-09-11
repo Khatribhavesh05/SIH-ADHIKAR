@@ -2,7 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-role";
+import { assertProjectInScope } from "@/lib/queries/scope";
 import { revalidatePath } from "next/cache";
+import type { CurrentUser } from "@/lib/auth";
 import type { ApprovalStatus, EntitlementType, EntitlementStatus } from "@prisma/client";
 
 export async function updateRRStatus(
@@ -10,13 +12,15 @@ export async function updateRRStatus(
   field: "draftStatus" | "collectorReviewStatus" | "commissionerApprovalStatus" | "publicationStatus",
   value: ApprovalStatus
 ) {
+  let user: CurrentUser;
   if (field === "draftStatus") {
-    await requirePermission((p) => p.draftRRScheme);
+    user = await requirePermission((p) => p.draftRRScheme);
   } else if (field === "collectorReviewStatus") {
-    await requirePermission((p) => p.reviewRRScheme);
+    user = await requirePermission((p) => p.reviewRRScheme);
   } else {
-    await requirePermission((p) => p.approveRRScheme);
+    user = await requirePermission((p) => p.approveRRScheme);
   }
+  await assertProjectInScope(user, projectId);
 
   await prisma.rRScheme.update({
     where: { projectId },
@@ -32,7 +36,10 @@ export async function addRREntitlement(
   personId: string,
   entitlementType: EntitlementType
 ) {
-  await requirePermission((p) => p.draftRRScheme || p.approveRRScheme);
+  const user = await requirePermission((p) => p.draftRRScheme || p.approveRRScheme);
+
+  const scheme = await prisma.rRScheme.findUniqueOrThrow({ where: { id: schemeId } });
+  await assertProjectInScope(user, scheme.projectId);
 
   await prisma.rREntitlement.create({
     data: {
@@ -44,18 +51,21 @@ export async function addRREntitlement(
     },
   });
 
-  const scheme = await prisma.rRScheme.findUnique({ where: { id: schemeId } });
-  if (scheme) {
-    revalidatePath(`/projects/${scheme.projectId}/rr`);
-    revalidatePath(`/projects/${scheme.projectId}`);
-  }
+  revalidatePath(`/projects/${scheme.projectId}/rr`);
+  revalidatePath(`/projects/${scheme.projectId}`);
 }
 
 export async function updateEntitlementStatus(
   entitlementId: string,
   status: EntitlementStatus
 ) {
-  await requirePermission((p) => p.draftRRScheme || p.approveRRScheme);
+  const user = await requirePermission((p) => p.draftRRScheme || p.approveRRScheme);
+
+  const entitlement = await prisma.rREntitlement.findUniqueOrThrow({
+    where: { id: entitlementId },
+    include: { scheme: true },
+  });
+  await assertProjectInScope(user, entitlement.scheme.projectId);
 
   const updated = await prisma.rREntitlement.update({
     where: { id: entitlementId },

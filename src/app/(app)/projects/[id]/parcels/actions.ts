@@ -2,11 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/require-role";
+import { assertProjectInScope } from "@/lib/queries/scope";
 import { revalidatePath } from "next/cache";
 import type { LandClassification, AffectedPersonRole } from "@prisma/client";
 
 export async function addParcel(projectId: string, formData: FormData) {
-  await requirePermission((p) => p.manageParcels);
+  const user = await requirePermission((p) => p.manageParcels);
+  await assertProjectInScope(user, projectId);
 
   const landClassification = String(formData.get("landClassification")) as LandClassification;
 
@@ -36,7 +38,8 @@ export async function addAffectedPerson(
   parcelId: string,
   formData: FormData
 ) {
-  await requirePermission((p) => p.manageParcels);
+  const user = await requirePermission((p) => p.manageParcels);
+  await assertProjectInScope(user, projectId);
 
   const role = String(formData.get("role")) as AffectedPersonRole;
 

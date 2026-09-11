@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PERMISSIONS } from "@/lib/domain/roles";
+import { projectScopeWhere } from "@/lib/queries/scope";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/Button";
 import { submitNotification } from "@/app/(app)/projects/actions";
@@ -16,7 +17,7 @@ export default async function NotificationPage({
   if (!user) redirect("/login");
   if (!PERMISSIONS[user.role].submitNotification) redirect(`/projects/${id}`);
 
-  const project = await prisma.project.findUnique({ where: { id } });
+  const project = await prisma.project.findFirst({ where: { id, ...projectScopeWhere(user.role, user) } });
   if (!project) notFound();
 
   const action = submitNotification.bind(null, id);
