@@ -107,9 +107,14 @@ export function NationalCommandCenter({
     return sum + (p.consentRecord?.affectedFamiliesTotal || parcelPersons || 12);
   }, 0);
   const resettledFamilies = filteredProjects.reduce((sum, p) => {
+    // Must use the SAME per-project fallback chain as totalFamilies above, or resettled
+    // can exceed affected (e.g. a project with no consentRecord and only 1 recorded
+    // affected person would otherwise be compared against a hardcoded "12").
+    const parcelPersons = p.parcels?.reduce((pSum, parcel) => pSum + (parcel.affectedPersons?.length || 0), 0) || 0;
+    const familiesTotal = p.consentRecord?.affectedFamiliesTotal || parcelPersons || 12;
     const isRRComplete = p.currentStage === "STAGE_9_RR";
-    const count = p.consentRecord?.affectedFamiliesTotal || 12;
-    return sum + (isRRComplete ? count : Math.round(count * 0.45));
+    const resettled = isRRComplete ? familiesTotal : Math.round(familiesTotal * 0.45);
+    return sum + Math.min(resettled, familiesTotal);
   }, 0);
   const resettledPercent = totalFamilies > 0 ? Math.round((resettledFamilies / totalFamilies) * 100) : 0;
 

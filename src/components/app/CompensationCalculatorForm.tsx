@@ -153,6 +153,14 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
           </div>
         )}
 
+        {!awardDate && days !== null && days < 0 && (
+          <p className="text-xs text-ink-muted -mt-2">
+            Section 30(3) interest below stays at ₹0 until an Award date is entered — the statutory
+            ledger only fixes the interest component once the award (or possession) date is known.
+            It does not yet reflect the {Math.abs(days)} days already overdue.
+          </p>
+        )}
+
         {!readOnly && (
           <div className="flex justify-end pt-2">
             <Button type="submit">Save Award</Button>
@@ -177,7 +185,11 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
                 highlight
               />
               <LedgerRow
-                label={`+ Interest for Delay (12% p.a. × ${breakdown.interestAccrualYears.toFixed(2)} yrs)`}
+                label={
+                  awardDate
+                    ? `+ Interest for Delay (12% p.a. × ${breakdown.interestAccrualYears.toFixed(2)} yrs)`
+                    : "+ Interest for Delay (12% p.a. — accrues from Award date, not yet entered)"
+                }
                 value={breakdown.interestAccrued}
                 sub
                 isDelta

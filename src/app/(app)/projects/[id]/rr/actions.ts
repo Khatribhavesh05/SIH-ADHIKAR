@@ -22,6 +22,35 @@ export async function updateRRStatus(
   }
   await assertProjectInScope(user, projectId);
 
+  const scheme = await prisma.rRScheme.findUniqueOrThrow({ where: { projectId } });
+
+  // Enforce pipeline ordering: a stage cannot move past NOT_STARTED until the
+  // stage before it has actually started/resolved. Without this guard the UI
+  // (which offers every status as a button regardless of upstream state) can
+  // produce combinations like "Collector Review: UNDER_REVIEW" while the
+  // "R&R Administrator Draft" is still NOT_STARTED.
+  if (
+    field === "collectorReviewStatus" &&
+    value !== "NOT_STARTED" &&
+    scheme.draftStatus === "NOT_STARTED"
+  ) {
+    throw new Error("Collector cannot review a draft that has not been started by the R&R Administrator yet.");
+  }
+  if (
+    field === "commissionerApprovalStatus" &&
+    value !== "NOT_STARTED" &&
+    scheme.collectorReviewStatus !== "APPROVED"
+  ) {
+    throw new Error("R&R Commissioner cannot act until the Collector has approved the scheme.");
+  }
+  if (
+    field === "publicationStatus" &&
+    value === "PUBLISHED" &&
+    scheme.commissionerApprovalStatus !== "APPROVED"
+  ) {
+    throw new Error("Scheme cannot be published before R&R Commissioner approval.");
+  }
+
   await prisma.rRScheme.update({
     where: { projectId },
     data: { [field]: value },

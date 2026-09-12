@@ -18,7 +18,7 @@ export function RRTab({ project, userRole }: { project: any; userRole: Role }) {
             Sections 31–42 R&amp;R scheme preparation, commissioner approval, and statutory channel publication.
           </p>
         </div>
-        {(userRole === "RR_ADMINISTRATOR" || userRole === "RR_COMMISSIONER") && (
+        {(userRole === "RR_ADMINISTRATOR" || userRole === "RR_COMMISSIONER" || userRole === "COLLECTOR") && (
           <LinkButton href={`/projects/${project.id}/rr`} variant="primary" className="text-xs px-3 py-1.5 min-h-0">
             Open R&amp;R Management Portal
           </LinkButton>
