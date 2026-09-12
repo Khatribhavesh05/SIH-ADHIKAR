@@ -122,6 +122,12 @@ export function AwardTab({ project, userRole }: { project: any; userRole: Role }
                 </span>
               </div>
               <div className="flex justify-between py-1">
+                <span className="text-ink-muted">Asset Value (Crops, Trees, Structures)</span>
+                <span className="font-mono-data font-semibold">
+                  {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(Number(award.assetValue))}
+                </span>
+              </div>
+              <div className="flex justify-between py-1">
                 <span className="text-ink-muted">Solatium Premium (100% of Market Value)</span>
                 <span className="font-mono-data font-semibold">
                   {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(Number(award.solatiumAmount))}
