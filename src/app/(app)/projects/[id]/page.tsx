@@ -9,10 +9,13 @@ import { formatNumber } from "@/lib/domain/format";
 
 export default async function ProjectDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { id } = await params;
+  const { tab } = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -62,7 +65,7 @@ export default async function ProjectDetailPage({
       </div>
 
       {/* Render 10-Tab Stepper View */}
-      <ProjectTabsContainer project={project as any} userRole={user.role} />
+      <ProjectTabsContainer project={project as any} userRole={user.role} initialTab={tab} />
     </div>
   );
 }

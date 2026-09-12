@@ -47,14 +47,32 @@ const STAGE_ORDER = [
   "STAGE_9_RR",
 ];
 
+const VALID_TAB_KEYS = [
+  "overview",
+  "notification",
+  "sia",
+  "expert",
+  "consent",
+  "declaration",
+  "award",
+  "disbursement",
+  "possession",
+  "rr",
+];
+
 export function ProjectTabsContainer({
   project,
   userRole,
+  initialTab,
 }: {
   project: ProjectData;
   userRole: Role;
+  /** Deep-link support, e.g. from /documents rows: /projects/[id]?tab=award */
+  initialTab?: string;
 }) {
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [activeTab, setActiveTab] = useState<string>(
+    initialTab && VALID_TAB_KEYS.includes(initialTab) ? initialTab : "overview"
+  );
 
   const currentIdx = STAGE_ORDER.indexOf(project.currentStage);
 

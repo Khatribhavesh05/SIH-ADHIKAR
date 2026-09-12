@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { projectScopeWhere } from "@/lib/queries/scope";
 import { Panel } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { formatDate } from "@/lib/domain/format";
+import Link from "next/link";
 
 const FILE_KINDS: Record<string, string> = {
   notification: "Notification Proof",
@@ -14,10 +14,20 @@ const FILE_KINDS: Record<string, string> = {
   award: "Award Document",
 };
 
+// Maps each document kind to the project tab where the underlying record lives,
+// via ProjectTabsContainer's ?tab= query param.
+const FILE_KIND_TABS: Record<string, string> = {
+  notification: "notification",
+  sia: "sia",
+  award: "award",
+};
+
 interface DocRow {
   key: string;
+  projectId: string;
   project: string;
   kind: string;
+  kindSlug: string;
   name: string;
   date: Date | null;
 }
@@ -39,22 +49,52 @@ export default async function DocumentsPage() {
     for (const n of p.notifications) {
       rows.push({
         key: n.id,
+        projectId: p.id,
         project: p.title,
         kind: FILE_KINDS.notification,
+        kindSlug: "notification",
         name: `${n.type === "PRELIMINARY_S11" ? "Preliminary" : "Declaration"} — ${n.gazetteReference}`,
         date: n.publicationDate,
       });
     }
     for (const s of p.siaRecords) {
-      rows.push({ key: s.id, project: p.title, kind: FILE_KINDS.sia, name: "Social Impact Assessment Report", date: null });
+      rows.push({
+        key: s.id,
+        projectId: p.id,
+        project: p.title,
+        kind: FILE_KINDS.sia,
+        kindSlug: "sia",
+        name: "Social Impact Assessment Report",
+        date: null,
+      });
     }
     if (p.award) {
-      rows.push({ key: p.award.id, project: p.title, kind: FILE_KINDS.award, name: "Award Determination", date: p.award.awardDate });
+      rows.push({
+        key: p.award.id,
+        projectId: p.id,
+        project: p.title,
+        kind: FILE_KINDS.award,
+        kindSlug: "award",
+        name: "Award Determination",
+        date: p.award.awardDate,
+      });
     }
   }
 
   const columns: DataColumn<DocRow>[] = [
-    { key: "name", header: "Document", primary: true, render: (r) => r.name },
+    {
+      key: "name",
+      header: "Document",
+      primary: true,
+      render: (r) => (
+        <Link
+          href={`/projects/${r.projectId}?tab=${FILE_KIND_TABS[r.kindSlug]}`}
+          className="text-brand hover:underline font-medium"
+        >
+          {r.name}
+        </Link>
+      ),
+    },
     { key: "project", header: "Project", render: (r) => <span className="text-ink-muted">{r.project}</span> },
     { key: "kind", header: "Type", render: (r) => <Badge tone="brand">{r.kind}</Badge> },
     { key: "date", header: "Date", className: "font-mono-data", render: (r) => formatDate(r.date) },
@@ -69,9 +109,6 @@ export default async function DocumentsPage() {
             Notification proofs, SIA reports, and award documents across projects in scope.
           </p>
         </div>
-        <Button variant="secondary" disabled title="File upload coming soon" className="w-full sm:w-auto justify-center">
-          Upload
-        </Button>
       </div>
 
       <Panel raised>
