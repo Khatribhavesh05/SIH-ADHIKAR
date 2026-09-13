@@ -31,6 +31,7 @@ export const PERMISSIONS: Record<
   Role,
   {
     createProject: boolean;
+    deleteProject: boolean;
     submitNotification: boolean;
     editDisputeStatus: boolean;
     manageParcels: boolean;
@@ -48,6 +49,7 @@ export const PERMISSIONS: Record<
 > = {
   REQUIRING_BODY: {
     createProject: true,
+    deleteProject: true,
     submitNotification: false,
     editDisputeStatus: true,
     manageParcels: false,
@@ -64,6 +66,7 @@ export const PERMISSIONS: Record<
   },
   COLLECTOR: {
     createProject: false,
+    deleteProject: false,
     submitNotification: true,
     editDisputeStatus: true,
     manageParcels: true,
@@ -80,6 +83,7 @@ export const PERMISSIONS: Record<
   },
   RR_ADMINISTRATOR: {
     createProject: false,
+    deleteProject: false,
     submitNotification: false,
     editDisputeStatus: false,
     manageParcels: false,
@@ -96,6 +100,7 @@ export const PERMISSIONS: Record<
   },
   RR_COMMISSIONER: {
     createProject: false,
+    deleteProject: false,
     submitNotification: false,
     editDisputeStatus: false,
     manageParcels: false,
@@ -112,6 +117,7 @@ export const PERMISSIONS: Record<
   },
   CENTRAL_MINISTRY_VIEWER: {
     createProject: false,
+    deleteProject: false,
     submitNotification: false,
     editDisputeStatus: false,
     manageParcels: false,

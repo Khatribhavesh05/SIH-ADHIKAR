@@ -1,18 +1,48 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDate, formatNumber } from "@/lib/domain/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
-import { CheckCircle2, Lock, AlertCircle, Building2, MapPin, Layers } from "lucide-react";
-import { toggleRRCostDeposit } from "@/app/(app)/projects/actions";
+import { CheckCircle2, Lock, AlertCircle, Building2, MapPin, Layers, Trash2 } from "lucide-react";
+import { toggleRRCostDeposit, deleteProject } from "@/app/(app)/projects/actions";
 import type { Role } from "@/lib/domain/roles";
 
 export function OverviewTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { toast, showToast } = useToast();
+  const router = useRouter();
   const canToggleDeposit = userRole === "REQUIRING_BODY";
+
+  // Deletable only pre-notification (Requiring Body's own project, per role
+  // scoping already enforced server-side) — once a Section 11/19
+  // notification is filed, deletion is blocked to preserve the audit trail.
+  const canDelete = userRole === "REQUIRING_BODY";
+  const notificationCount = (project.notifications || []).length;
+  const isDeletable = notificationCount === 0;
+
+  async function handleDelete() {
+    if (!canDelete) return;
+    if (!isDeletable) {
+      showToast(
+        "error",
+        "This project has a filed statutory notification and can no longer be deleted — removing it would erase an audit trail affected parties may rely on under the Act."
+      );
+      return;
+    }
+    if (!confirm(`Delete "${project.title}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await deleteProject(project.id);
+      router.push("/projects");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to delete project.");
+      setDeleting(false);
+    }
+  }
 
   const affectedPersonCount = project.parcels.reduce(
     (sum: number, parcel: any) => sum + parcel.affectedPersons.length,
@@ -141,6 +171,34 @@ export function OverviewTab({ project, userRole }: { project: any; userRole: Rol
           </div>
         </div>
       </div>
+
+      {canDelete && (
+        <div className="p-4 rounded-md border border-danger/30 bg-danger-tint/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 text-danger mt-0.5" />
+            <div>
+              <div className="font-semibold text-sm text-danger">Delete Project</div>
+              <div className="text-xs text-ink-muted mt-0.5">
+                {isDeletable
+                  ? "Permanently removes this project. Only possible before any statutory notification is filed."
+                  : "This project has a filed statutory notification and can no longer be deleted — removing it would erase an audit trail affected parties may rely on under the Act."}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <ToastBanner toast={toast} />
+            <Button
+              onClick={handleDelete}
+              disabled={!isDeletable || deleting}
+              variant="secondary"
+              className="text-xs px-3 py-1.5 min-h-0 text-danger border-danger/30 hover:bg-danger-tint/40"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              {deleting ? "Deleting..." : "Delete Project"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

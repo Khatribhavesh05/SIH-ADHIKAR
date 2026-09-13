@@ -6,6 +6,7 @@ import { assertProjectInScope } from "@/lib/queries/scope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { awardDeadline, lapseRiskDeadline, isRRCommitteeRequired, consentThresholdPercent } from "@/lib/domain/compensation";
+import { uploadProjectFile } from "@/lib/supabase/storage";
 import type { AcquisitionRoute, ProjectType, ExpertGroupOutcome, DisputeStatus } from "@prisma/client";
 
 export async function createProject(formData: FormData) {
@@ -57,6 +58,28 @@ export async function createProject(formData: FormData) {
   redirect(`/projects/${project.id}`);
 }
 
+/**
+ * A project may only be deleted before any statutory notification has been
+ * filed — once a Section 11/19 notification exists, affected parties may
+ * already be relying on it, so deletion is blocked permanently rather than
+ * just hidden in the UI.
+ */
+export async function deleteProject(projectId: string) {
+  const user = await requirePermission((p) => p.deleteProject);
+  await assertProjectInScope(user, projectId);
+
+  const notificationCount = await prisma.notification.count({ where: { projectId } });
+  if (notificationCount > 0) {
+    throw new Error(
+      "This project has a filed statutory notification and can no longer be deleted — removing it would erase an audit trail affected parties may rely on under the Act."
+    );
+  }
+
+  await prisma.project.delete({ where: { id: projectId } });
+
+  revalidatePath("/projects");
+}
+
 export async function toggleRRCostDeposit(projectId: string, deposited: boolean) {
   const user = await requirePermission((p) => p.setDepositFlag);
   await assertProjectInScope(user, projectId);
@@ -76,9 +99,12 @@ export async function updateSIAData(projectId: string, formData: FormData) {
 
   const publicHearingSummary = String(formData.get("publicHearingSummary") ?? "").trim();
   const isMultiCropFlagged = formData.get("isMultiCropFlagged") === "true";
-  const reportDocumentUrl = String(formData.get("reportDocumentUrl") ?? "SIA_Report_Final.pdf");
 
   const existing = await prisma.sIARecord.findFirst({ where: { projectId } });
+  const reportDocumentUrl =
+    (await uploadProjectFile(projectId, "sia", formData.get("reportDocument") as File | null)) ??
+    existing?.reportDocumentUrl ??
+    null;
 
   if (existing) {
     await prisma.sIARecord.update({
@@ -221,8 +247,12 @@ export async function submitNotification(projectId: string, formData: FormData) 
   const publicationDate = new Date(String(formData.get("publicationDate")));
   const gazetteReference = String(formData.get("gazetteReference") ?? "").trim();
   const newspaperReference = String(formData.get("newspaperReference") ?? "").trim();
-  const noticeBoardProofUrl = String(formData.get("noticeBoardProofUrl") ?? "notice_board_proof.jpg");
   const objectionWindowDeadline = new Date(String(formData.get("objectionWindowDeadline")));
+  const noticeBoardProofUrl = await uploadProjectFile(
+    projectId,
+    "notification",
+    formData.get("noticeBoardProof") as File | null
+  );
 
   if (type === "DECLARATION_S19") {
     const project = await prisma.project.findUnique({ where: { id: projectId } });

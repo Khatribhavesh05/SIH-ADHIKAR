@@ -5,13 +5,39 @@ import { formatDate } from "@/lib/domain/format";
 import { submitNotification } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
-import { FileText, Calendar, Upload, CheckCircle2, Clock } from "lucide-react";
+import { FileText, CheckCircle2, Clock } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
+import { fileDisplayName } from "@/lib/files";
+import type { NotificationType } from "@prisma/client";
+import { defaultObjectionWindowDeadline } from "@/lib/domain/notifications";
+
+const toDateInputValue = (d: Date) => d.toISOString().split("T")[0];
 
 export function NotificationTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const { toast, showToast } = useToast();
+
+  const [type, setType] = useState<NotificationType>("PRELIMINARY_S11");
+  const [publicationDate, setPublicationDate] = useState(() => toDateInputValue(new Date()));
+  const [deadline, setDeadline] = useState(() =>
+    toDateInputValue(defaultObjectionWindowDeadline("PRELIMINARY_S11", new Date()))
+  );
+  const [deadlineTouched, setDeadlineTouched] = useState(false);
+
+  function handleTypeChange(next: NotificationType) {
+    setType(next);
+    if (!deadlineTouched) {
+      setDeadline(toDateInputValue(defaultObjectionWindowDeadline(next, new Date(publicationDate))));
+    }
+  }
+
+  function handlePublicationDateChange(next: string) {
+    setPublicationDate(next);
+    if (!deadlineTouched) {
+      setDeadline(toDateInputValue(defaultObjectionWindowDeadline(type, new Date(next))));
+    }
+  }
 
   const notifications = project.notifications || [];
 
@@ -61,7 +87,12 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
           <div className="grid md:grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium">Notification Type</span>
-              <select name="type" className="input">
+              <select
+                name="type"
+                className="input"
+                value={type}
+                onChange={(e) => handleTypeChange(e.target.value as NotificationType)}
+              >
                 <option value="PRELIMINARY_S11">Preliminary Notification (Section 11)</option>
                 <option value="DECLARATION_S19">Declaration Notification (Section 19)</option>
               </select>
@@ -69,7 +100,14 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
 
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium">Publication Date</span>
-              <input type="date" name="publicationDate" required defaultValue={new Date().toISOString().split("T")[0]} className="input" />
+              <input
+                type="date"
+                name="publicationDate"
+                required
+                value={publicationDate}
+                onChange={(e) => handlePublicationDateChange(e.target.value)}
+                className="input"
+              />
             </label>
 
             <label className="flex flex-col gap-1">
@@ -83,20 +121,34 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium">Objection Window Deadline</span>
+              <span className="text-xs font-medium">
+                Objection Window Deadline
+                {type === "PRELIMINARY_S11" ? " (Section 15 — 21 days)" : " (no statutory window at declaration)"}
+              </span>
               <input
                 type="date"
                 name="objectionWindowDeadline"
                 required
-                defaultValue={new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                value={deadline}
+                onChange={(e) => {
+                  setDeadlineTouched(true);
+                  setDeadline(e.target.value);
+                }}
                 className="input"
               />
+              {type === "DECLARATION_S19" && (
+                <span className="text-[11px] text-ink-muted">
+                  The Act does not define a further objection window at Section 19 declaration — objections are
+                  resolved earlier under Section 15. Defaulted to the publication date; adjust only if your
+                  jurisdiction imposes an administrative deadline here.
+                </span>
+              )}
             </label>
 
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium">Notice-Board Proof Upload (Photo / Doc)</span>
               <div className="flex items-center gap-2">
-                <input type="file" className="text-xs text-ink-muted file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white" />
+                <input type="file" name="noticeBoardProof" className="text-xs text-ink-muted file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white" />
               </div>
             </label>
           </div>
@@ -143,9 +195,14 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
                     {daysLeft > 0 ? `${daysLeft} days remaining in objection window` : "Objection window closed"}
                   </div>
                   {n.noticeBoardProofUrl && (
-                    <div className="mt-1 text-[11px] text-brand flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-success" /> Notice-Board Proof Attached ({n.noticeBoardProofUrl})
-                    </div>
+                    <a
+                      href={`/api/files/${project.id}?path=${encodeURIComponent(n.noticeBoardProofUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 text-[11px] text-brand flex items-center gap-1 hover:underline"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-success" /> Notice-Board Proof Attached ({fileDisplayName(n.noticeBoardProofUrl)})
+                    </a>
                   )}
                 </div>
               </div>

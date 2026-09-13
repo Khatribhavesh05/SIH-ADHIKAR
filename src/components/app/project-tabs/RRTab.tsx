@@ -15,7 +15,7 @@ export function RRTab({ project, userRole }: { project: any; userRole: Role }) {
         <div>
           <h2 className="text-lg font-semibold text-brand-dark">Stage 9 — Rehabilitation &amp; Resettlement (R&amp;R) Scheme</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Sections 31–42 R&amp;R scheme preparation, commissioner approval, and statutory channel publication.
+            Sections 31–45 R&amp;R scheme preparation, commissioner approval, and statutory channel publication.
           </p>
         </div>
         {(userRole === "RR_ADMINISTRATOR" || userRole === "RR_COMMISSIONER" || userRole === "COLLECTOR") && (

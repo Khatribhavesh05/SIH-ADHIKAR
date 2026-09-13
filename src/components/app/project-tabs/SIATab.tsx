@@ -4,8 +4,9 @@ import { useState } from "react";
 import { updateSIAData } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
-import { Users, FileCheck, AlertTriangle, Plus, Check } from "lucide-react";
+import { Users, FileCheck, AlertTriangle, Check } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
+import { fileDisplayName } from "@/lib/files";
 
 export function SIATab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
@@ -14,20 +15,17 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
 
   const siaRecord = project.siaRecords?.[0] || null;
 
-  const [summary, setSummary] = useState(
-    siaRecord?.publicHearingSummary || "Public hearing conducted with Gram Sabha; key concerns regarding standing crop compensation addressed."
-  );
+  const [summary, setSummary] = useState(siaRecord?.publicHearingSummary || "");
   const [isMultiCrop, setIsMultiCrop] = useState(siaRecord?.isMultiCropFlagged || false);
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canEdit) return;
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("publicHearingSummary", summary);
-      formData.append("isMultiCropFlagged", String(isMultiCrop));
-      formData.append("reportDocumentUrl", "SIA_Report_Final_2026.pdf");
+      const formData = new FormData(e.currentTarget);
+      formData.set("publicHearingSummary", summary);
+      formData.set("isMultiCropFlagged", String(isMultiCrop));
 
       await updateSIAData(project.id, formData);
       showToast("success", "SIA record saved.");
@@ -37,12 +35,6 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
       setLoading(false);
     }
   }
-
-  // Simulated Public Hearing log items
-  const hearingLogs = [
-    { id: 1, date: "2026-03-15", attendees: 142, objections: "Request for higher solatium compensation and replacement agricultural land." },
-    { id: 2, date: "2026-04-02", attendees: 89, objections: "Clarification sought on irrigation channel realignment and access roads." },
-  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,14 +59,20 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
             <div className="flex items-center gap-3 mt-2">
               <input
                 type="file"
+                name="reportDocument"
                 disabled={!canEdit}
                 className="text-xs text-ink-muted file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
             {siaRecord?.reportDocumentUrl && (
-              <div className="text-xs text-success font-medium flex items-center gap-1 mt-1">
-                <Check className="w-3.5 h-3.5" /> Current Report: {siaRecord.reportDocumentUrl}
-              </div>
+              <a
+                href={`/api/files/${project.id}?path=${encodeURIComponent(siaRecord.reportDocumentUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-success font-medium flex items-center gap-1 mt-1 hover:underline"
+              >
+                <Check className="w-3.5 h-3.5" /> Current Report: {fileDisplayName(siaRecord.reportDocumentUrl)}
+              </a>
             )}
           </div>
 
@@ -108,25 +106,8 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
             </h3>
           </div>
 
-          <div className="overflow-x-auto border border-hairline rounded-md">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-paper border-b border-hairline font-semibold text-ink-muted">
-                <tr>
-                  <th className="p-3">Hearing Date</th>
-                  <th className="p-3">Attendees Count</th>
-                  <th className="p-3">Objections &amp; Feedback Summary</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {hearingLogs.map((log) => (
-                  <tr key={log.id} className="bg-paper-raised hover:bg-paper">
-                    <td className="p-3 font-mono-data font-medium">{log.date}</td>
-                    <td className="p-3 font-mono-data">{log.attendees} residents</td>
-                    <td className="p-3 text-ink-muted">{log.objections}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="text-center py-8 border border-dashed border-hairline-strong rounded-md text-ink-muted text-sm">
+            No public hearings recorded yet.
           </div>
 
           <label className="flex flex-col gap-1 mt-2">

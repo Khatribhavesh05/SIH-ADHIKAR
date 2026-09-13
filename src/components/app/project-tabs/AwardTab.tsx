@@ -34,7 +34,7 @@ export function AwardTab({ project, userRole }: { project: any; userRole: Role }
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center pb-4 border-b border-hairline">
         <div>
-          <h2 className="text-lg font-semibold text-brand-dark">Stage 6 — Award Determination (Sections 23–30)</h2>
+          <h2 className="text-lg font-semibold text-brand-dark">Stage 6 — Award Determination (Sections 25–30)</h2>
           <p className="text-xs text-ink-muted mt-0.5">
             Transparent compensation calculation ledger and statutory 12-month award deadline tracking.
           </p>
