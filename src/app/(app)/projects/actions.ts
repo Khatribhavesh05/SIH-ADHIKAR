@@ -140,13 +140,14 @@ export async function updateExpertReview(projectId: string, formData: FormData) 
 
   const expertGroupOutcome = String(formData.get("expertGroupOutcome") ?? "APPROVED") as ExpertGroupOutcome;
   const expertGroupJustification = String(formData.get("expertGroupJustification") ?? "").trim();
+  const expertGroupName = String(formData.get("expertGroup") ?? "").trim();
 
   const existing = await prisma.sIARecord.findFirst({ where: { projectId } });
 
   if (existing) {
     await prisma.sIARecord.update({
       where: { id: existing.id },
-      data: { expertGroupOutcome, expertGroupJustification },
+      data: { expertGroupOutcome, expertGroupJustification, expertGroupName },
     });
   } else {
     await prisma.sIARecord.create({
@@ -154,6 +155,7 @@ export async function updateExpertReview(projectId: string, formData: FormData) 
         projectId,
         expertGroupOutcome,
         expertGroupJustification,
+        expertGroupName,
       },
     });
   }

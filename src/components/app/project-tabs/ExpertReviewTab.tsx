@@ -14,11 +14,9 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
 
   const siaRecord = project.siaRecords?.[0] || null;
 
-  const [outcome, setOutcome] = useState<string>(siaRecord?.expertGroupOutcome || "APPROVED");
-  const [justification, setJustification] = useState<string>(
-    siaRecord?.expertGroupJustification || "The independent Expert Group evaluated the SIA report and concluded that the project serves a legitimate public purpose with minimal displacement."
-  );
-  const [expertGroup, setExpertGroup] = useState<string>("State Independent Expert Group (Chaired by Prof. R. K. Varma)");
+  const [outcome, setOutcome] = useState<string>(siaRecord?.expertGroupOutcome || "PENDING");
+  const [justification, setJustification] = useState<string>(siaRecord?.expertGroupJustification || "");
+  const [expertGroup, setExpertGroup] = useState<string>(siaRecord?.expertGroupName || "");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +71,7 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
               disabled={!canEdit}
               className="input text-xs font-semibold disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-paper"
             >
+              <option value="PENDING" disabled>Select outcome…</option>
               <option value="APPROVED">APPROVED — Proceed with Acquisition</option>
               <option value="MODIFIED">MODIFIED — Requires Project Extent Reduction</option>
               <option value="REJECTED">REJECTED — Acquisition Does Not Meet Criteria</option>
@@ -98,17 +97,21 @@ export function ExpertReviewTab({ project, userRole }: { project: any; userRole:
             ? "bg-success-tint border-success/30 text-success"
             : outcome === "MODIFIED"
             ? "bg-warning-tint border-warning/30 text-warning"
-            : "bg-danger-tint border-danger/30 text-danger"
+            : outcome === "REJECTED"
+            ? "bg-danger-tint border-danger/30 text-danger"
+            : "bg-paper border-hairline-strong text-ink-muted"
         }`}>
           {outcome === "APPROVED" && <CheckCircle2 className="w-5 h-5 shrink-0" />}
           {outcome === "MODIFIED" && <AlertCircle className="w-5 h-5 shrink-0" />}
           {outcome === "REJECTED" && <XCircle className="w-5 h-5 shrink-0" />}
+          {outcome === "PENDING" && <AlertCircle className="w-5 h-5 shrink-0" />}
           <div>
             <div className="font-semibold text-xs">Status: {outcome}</div>
             <div className="opacity-90 mt-0.5">
               {outcome === "APPROVED" && "Appraisal complete. Project is cleared to move to Consent / Declaration."}
               {outcome === "MODIFIED" && "Appraisal approved conditionally with required boundary adjustments."}
               {outcome === "REJECTED" && "Acquisition proposal rejected by Expert Group. Process terminated under Section 7."}
+              {outcome === "PENDING" && "No Expert Group decision recorded yet for this project."}
             </div>
           </div>
         </div>

@@ -213,6 +213,7 @@ model SIARecord {
   project                  Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   reportDocumentUrl        String?
   publicHearingSummary     String?
+  expertGroupName          String?
   expertGroupOutcome       ExpertGroupOutcome @default(PENDING)
   expertGroupJustification String?
   isMultiCropFlagged       Boolean            @default(false)
