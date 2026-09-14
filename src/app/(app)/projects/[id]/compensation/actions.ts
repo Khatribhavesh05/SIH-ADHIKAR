@@ -15,8 +15,16 @@ export async function saveAward(projectId: string, formData: FormData) {
   const areaType = String(formData.get("areaType") ?? "RURAL") as AreaType;
   const declarationDateStr = String(formData.get("declarationDate") ?? "");
   const awardDateStr = String(formData.get("awardDate") ?? "");
-  const areaAcres = parseFloat(String(formData.get("areaAcres") ?? "0"));
   const notificationDateStr = String(formData.get("notificationDate") ?? "");
+
+  // Market Value must reflect actually surveyed land, not the project's
+  // blanket declared acreage — recompute from LandParcel records rather
+  // than trusting the client-supplied hidden field.
+  const parcelAreaSum = await prisma.landParcel.aggregate({
+    where: { projectId },
+    _sum: { areaAcres: true },
+  });
+  const areaAcres = Number(parcelAreaSum._sum.areaAcres ?? 0);
 
   const declarationDate = new Date(declarationDateStr);
   const awardDate = awardDateStr ? new Date(awardDateStr) : null;

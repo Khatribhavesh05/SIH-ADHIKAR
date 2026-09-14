@@ -48,9 +48,14 @@ export default async function ParcelsPage({
 
   const project = await prisma.project.findFirst({
     where: { id, ...projectScopeWhere(user.role, user) },
-    include: { parcels: { include: { affectedPersons: true }, orderBy: { createdAt: "asc" } } },
+    include: {
+      parcels: { include: { affectedPersons: true }, orderBy: { createdAt: "asc" } },
+      siaRecords: true,
+    },
   });
   if (!project) notFound();
+
+  const siaFlagsMultiCrop = project.siaRecords.some((r) => r.isMultiCropFlagged);
 
   const addParcelAction = addParcel.bind(null, id);
 
@@ -99,6 +104,12 @@ export default async function ParcelsPage({
                   <Badge tone="warning">Multi-crop irrigated — RFCTLARR restricts acquisition of this land</Badge>
                 )}
               </PanelHeader>
+              {parcel.isMultiCropIrrigated && !siaFlagsMultiCrop && (
+                <div className="px-4 sm:px-5 py-2 text-xs text-danger bg-danger-tint/40 border-b border-danger/20">
+                  This parcel is multi-crop irrigated but the project&apos;s SIA record does not flag multi-crop
+                  irrigated land — consider updating the SIA record.
+                </div>
+              )}
               <PanelBody>
                 <div className="mb-4">
                   <ResponsiveDataTable
@@ -110,7 +121,11 @@ export default async function ParcelsPage({
                   />
                 </div>
 
-                <form action={addPersonAction} className="grid md:grid-cols-5 gap-3 items-end border-t border-hairline pt-4 text-xs">
+                <form
+                  key={parcel.affectedPersons.length}
+                  action={addPersonAction}
+                  className="grid md:grid-cols-5 gap-3 items-end border-t border-hairline pt-4 text-xs"
+                >
                   <Field label="Name"><input name="name" required className="input text-xs" /></Field>
                   <Field label="Role">
                     <select name="role" required className="input text-xs font-medium">

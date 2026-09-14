@@ -5,12 +5,14 @@ import { calculateCompensation, awardDeadline, daysUntil, riskStatusForDeadline,
 import { formatINR, formatDate } from "@/lib/domain/format";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { useToast, ToastBanner } from "@/components/ui/Toast";
 
 interface Props {
   projectId: string;
   areaAcres: number;
+  declaredAreaAcres: number;
   readOnly: boolean;
-  saveAction: (formData: FormData) => void;
+  saveAction: (formData: FormData) => Promise<void>;
   initial: {
     circleRatePerAcre: number;
     saleDeedAveragePerAcre: number;
@@ -22,13 +24,29 @@ interface Props {
   };
 }
 
-export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, saveAction, initial }: Props) {
+export function CompensationCalculatorForm({ projectId, areaAcres, declaredAreaAcres, readOnly, saveAction, initial }: Props) {
   const [circleRate, setCircleRate] = useState(initial.circleRatePerAcre);
   const [saleDeed, setSaleDeed] = useState(initial.saleDeedAveragePerAcre);
   const [assetValue, setAssetValue] = useState(initial.assetValue);
   const [areaType, setAreaType] = useState<"RURAL" | "URBAN">(initial.areaType);
   const [declarationDate, setDeclarationDate] = useState(initial.declarationDate);
   const [awardDate, setAwardDate] = useState(initial.awardDate);
+  const [saving, setSaving] = useState(false);
+  const { toast, showToast } = useToast();
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      await saveAction(formData);
+      showToast("success", "Award saved.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to save award.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const breakdown = useMemo(() => {
     if (!declarationDate) return null;
@@ -51,11 +69,15 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
-      <form action={saveAction} className="flex flex-col gap-4">
-        <input type="hidden" name="areaAcres" value={areaAcres} />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {initial.notificationDate && (
           <input type="hidden" name="notificationDate" value={initial.notificationDate} />
         )}
+
+        <div className="text-xs text-ink-muted -mt-1">
+          Market Value uses <strong className="text-ink">{areaAcres}</strong> surveyed acre{areaAcres === 1 ? "" : "s"} recorded
+          via the Parcels page{declaredAreaAcres > areaAcres && ` (project declared ${declaredAreaAcres} acres total)`}.
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Circle rate (₹/acre)">
@@ -162,8 +184,9 @@ export function CompensationCalculatorForm({ projectId, areaAcres, readOnly, sav
         )}
 
         {!readOnly && (
-          <div className="flex justify-end pt-2">
-            <Button type="submit">Save Award</Button>
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <ToastBanner toast={toast} />
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Award"}</Button>
           </div>
         )}
       </form>

@@ -23,6 +23,12 @@ export default async function CompensationPage({
   });
   if (!project) notFound();
 
+  const parcelAreaSum = await prisma.landParcel.aggregate({
+    where: { projectId: id },
+    _sum: { areaAcres: true },
+  });
+  const surveyedAreaAcres = Number(parcelAreaSum._sum.areaAcres ?? 0);
+
   const action = saveAward.bind(null, id);
 
   const toDateInput = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
@@ -39,7 +45,8 @@ export default async function CompensationPage({
 
       <CompensationCalculatorForm
         projectId={id}
-        areaAcres={Number(project.totalAreaAcres)}
+        areaAcres={surveyedAreaAcres}
+        declaredAreaAcres={Number(project.totalAreaAcres)}
         readOnly={access !== "edit"}
         saveAction={action}
         initial={{

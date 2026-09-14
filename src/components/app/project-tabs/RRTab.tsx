@@ -80,7 +80,12 @@ export function RRTab({ project, userRole }: { project: any; userRole: Role }) {
           </p>
 
           <div className="mt-2 text-xs font-mono-data text-ink flex flex-col gap-1.5 p-3 rounded bg-paper-raised border border-hairline">
-            <div>Administrator: <strong>{rrScheme?.administratorName || "Suresh Patel (Assigned)"}</strong></div>
+            <div>
+              Administrator:{" "}
+              <strong className={rrScheme?.administratorName ? "" : "text-ink-muted font-normal"}>
+                {rrScheme?.administratorName || "Not yet assigned"}
+              </strong>
+            </div>
             <div>R&amp;R Committee Required: <strong>{isLargeProject ? "YES (≥100 Acres)" : "NO (<100 Acres)"}</strong></div>
           </div>
         </div>

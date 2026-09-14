@@ -40,5 +40,25 @@ export async function upsertDisbursement(
     });
   }
 
+  // Stage 7 is complete once every recorded claimant across the project's
+  // parcels has been marked disbursed (has a disbursement with a date) —
+  // not once total disbursed reaches the Award's assessed total, since
+  // claimants are paid their own individually recorded amounts.
+  const claimants = await prisma.affectedPerson.findMany({
+    where: { parcel: { projectId } },
+    include: { disbursements: { where: { awardId } } },
+  });
+  const allDisbursed =
+    claimants.length > 0 &&
+    claimants.every((c) => c.disbursements.some((d) => d.disbursementDate));
+
+  if (allDisbursed) {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { currentStage: "STAGE_8_POSSESSION" },
+    });
+  }
+
   revalidatePath(`/projects/${projectId}/disbursement`);
+  revalidatePath(`/projects/${projectId}`);
 }
