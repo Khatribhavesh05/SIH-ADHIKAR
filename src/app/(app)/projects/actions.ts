@@ -263,6 +263,12 @@ export async function submitNotification(projectId: string, formData: FormData) 
         "Section 19(2) statutory gate: Declaration cannot be published until the Requiring Body has confirmed the R&R cost deposit."
       );
     }
+    const parcelCount = await prisma.landParcel.count({ where: { projectId } });
+    if (parcelCount === 0) {
+      throw new Error(
+        "Section 19 declaration requires at least one surveyed Land Parcel record before it can be published."
+      );
+    }
   }
 
   await prisma.notification.create({

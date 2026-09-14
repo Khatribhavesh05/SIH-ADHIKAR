@@ -2,18 +2,28 @@
 
 import { useState } from "react";
 import { formatDate } from "@/lib/domain/format";
-import { toggleRRCostDeposit } from "@/app/(app)/projects/actions";
+import { toggleRRCostDeposit, submitNotification } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
+import { FileInput } from "@/components/ui/FileInput";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
-import { Lock, CheckCircle2, ShieldAlert, Plus, Layers, UserCheck } from "lucide-react";
+import { Lock, CheckCircle2, ShieldAlert, Plus, Layers, UserCheck, Gavel } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
+import { fileDisplayName } from "@/lib/files";
+
+const toDateInputValue = (d: Date) => d.toISOString().split("T")[0];
 
 export function DeclarationTab({ project, userRole }: { project: any; userRole: Role }) {
   const [loading, setLoading] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const { toast, showToast } = useToast();
 
   const isDepositConfirmed = project.rrCostDeposited;
+  const hasParcels = project.parcels.length > 0;
+  const declaration = (project.notifications || []).find((n: any) => n.type === "DECLARATION_S19") || null;
+  const canPublish = userRole === "COLLECTOR";
+
+  const [publicationDate, setPublicationDate] = useState(() => toDateInputValue(new Date()));
 
   async function handleToggleDeposit() {
     if (userRole !== "REQUIRING_BODY") return;
@@ -25,6 +35,23 @@ export function DeclarationTab({ project, userRole }: { project: any; userRole: 
       showToast("error", err instanceof Error ? err.message : "Failed to update deposit status.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePublish(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!canPublish || !hasParcels || !isDepositConfirmed) return;
+    setPublishing(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      formData.set("type", "DECLARATION_S19");
+      formData.set("objectionWindowDeadline", String(formData.get("publicationDate")));
+      await submitNotification(project.id, formData);
+      showToast("success", "Section 19 Declaration published. Award stage unlocked.");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Failed to publish declaration.");
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -148,6 +175,102 @@ export function DeclarationTab({ project, userRole }: { project: any; userRole: 
             </table>
           </div>
         )}
+
+        {/* Publish Section 19 Declaration */}
+        <div className="flex flex-col gap-3 pt-2 border-t border-hairline">
+          <h3 className="font-semibold text-sm text-brand-dark flex items-center gap-2">
+            <Gavel className="w-4 h-4 text-brand" /> Section 19 Declaration
+          </h3>
+
+          {declaration ? (
+            <div className="p-4 rounded-md border border-success/40 bg-success-tint/40 flex flex-col gap-1 text-xs text-success">
+              <div className="flex items-center gap-2 font-semibold">
+                <CheckCircle2 className="w-4 h-4" /> Declaration Published
+              </div>
+              <div className="text-ink-muted font-mono-data flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                <span>Gazette: <strong className="text-ink">{declaration.gazetteReference}</strong></span>
+                <span>Newspaper: <strong className="text-ink">{declaration.newspaperReference}</strong></span>
+                <span>Published: <strong className="text-ink">{formatDate(declaration.publicationDate)}</strong></span>
+              </div>
+              {declaration.noticeBoardProofUrl && (
+                <a
+                  href={`/api/files/${project.id}?path=${encodeURIComponent(declaration.noticeBoardProofUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-brand hover:underline mt-1"
+                >
+                  Notice-Board Proof: {fileDisplayName(declaration.noticeBoardProofUrl)}
+                </a>
+              )}
+            </div>
+          ) : canPublish ? (
+            <form onSubmit={handlePublish} className="p-4 rounded-md border border-brand/30 bg-brand-tint/30 flex flex-col gap-4">
+              {!hasParcels && (
+                <p className="text-xs text-danger font-medium">
+                  Add at least one Land Parcel record above before the declaration can be published.
+                </p>
+              )}
+              <div className="grid md:grid-cols-2 gap-4">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Publication Date</span>
+                  <input
+                    type="date"
+                    name="publicationDate"
+                    required
+                    value={publicationDate}
+                    onChange={(e) => setPublicationDate(e.target.value)}
+                    className="input"
+                    disabled={!hasParcels}
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Gazette Reference No.</span>
+                  <input
+                    type="text"
+                    name="gazetteReference"
+                    placeholder="e.g. G.S.R. 412(E)"
+                    required
+                    className="input"
+                    disabled={!hasParcels}
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Newspaper Reference</span>
+                  <input
+                    type="text"
+                    name="newspaperReference"
+                    placeholder="e.g. Times of India / Dainik Jagran"
+                    required
+                    className="input"
+                    disabled={!hasParcels}
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Notice-Board Proof Upload (Photo / Doc)</span>
+                  <FileInput
+                    name="noticeBoardProof"
+                    disabled={!hasParcels}
+                    inputClassName="text-xs text-ink-muted file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <ToastBanner toast={toast} />
+                <Button type="submit" disabled={publishing || !hasParcels} className="text-xs px-5 py-2">
+                  {publishing ? "Publishing..." : "Publish Section 19 Declaration"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="text-center py-6 border border-dashed border-hairline rounded-md text-ink-muted text-xs">
+              Awaiting Collector to publish the Section 19 Declaration.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

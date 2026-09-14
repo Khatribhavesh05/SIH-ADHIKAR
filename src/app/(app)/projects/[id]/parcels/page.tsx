@@ -5,7 +5,8 @@ import { PERMISSIONS } from "@/lib/domain/roles";
 import { projectScopeWhere } from "@/lib/queries/scope";
 import { Panel, PanelHeader, PanelBody } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
+import { ArrowLeft } from "lucide-react";
 import { ResponsiveDataTable, type DataColumn } from "@/components/ui/ResponsiveDataTable";
 import { formatNumber } from "@/lib/domain/format";
 import { addParcel, addAffectedPerson } from "./actions";
@@ -56,6 +57,13 @@ export default async function ParcelsPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
+        <LinkButton
+          href={`/projects/${id}?tab=declaration`}
+          variant="ghost"
+          className="text-xs px-0 py-0 min-h-0 -ml-1 mb-2"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back to Project
+        </LinkButton>
         <h1 className="font-serif-heading text-2xl font-semibold">Parcels &amp; Affected Persons</h1>
         <p className="text-sm text-ink-muted mt-1">{project.title} — Stage 5 (Section 19 survey &amp; claims)</p>
       </div>
