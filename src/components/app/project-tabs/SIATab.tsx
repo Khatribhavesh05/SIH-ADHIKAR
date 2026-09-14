@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { updateSIAData } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { FileInput } from "@/components/ui/FileInput";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { Users, FileCheck, AlertTriangle, Check } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
@@ -57,12 +58,7 @@ export function SIATab({ project, userRole }: { project: any; userRole: Role }) 
               Upload signed Social Impact Assessment Report prepared by the designated Agency.
             </p>
             <div className="flex items-center gap-3 mt-2">
-              <input
-                type="file"
-                name="reportDocument"
-                disabled={!canEdit}
-                className="text-xs text-ink-muted file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              />
+              <FileInput name="reportDocument" disabled={!canEdit} />
             </div>
             {siaRecord?.reportDocumentUrl && (
               <a

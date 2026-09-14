@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { Badge } from "@/components/ui/Badge";
+import { FileInput } from "@/components/ui/FileInput";
 
 export function MobileFieldForm({ officerName }: { officerName: string }) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -80,14 +81,12 @@ export function MobileFieldForm({ officerName }: { officerName: string }) {
       <div>
         <span className="text-sm font-medium">Site photo</span>
         <div className="mt-1.5">
-          <input
-            type="file"
+          <FileInput
             accept="image/*"
             capture="environment"
-            className="text-xs"
-            onChange={(e) => setPhotoName(e.target.files?.[0]?.name ?? null)}
+            inputClassName="text-xs"
+            onChange={(file) => setPhotoName(file?.name ?? null)}
           />
-          {photoName && <p className="text-xs text-ink-muted mt-1">Selected: {photoName}</p>}
         </div>
       </div>
 

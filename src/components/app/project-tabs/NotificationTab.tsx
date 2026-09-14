@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatDate } from "@/lib/domain/format";
 import { submitNotification } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/Button";
+import { FileInput } from "@/components/ui/FileInput";
 import { useToast, ToastBanner } from "@/components/ui/Toast";
 import { FileText, CheckCircle2, Clock } from "lucide-react";
 import type { Role } from "@/lib/domain/roles";
@@ -148,7 +149,10 @@ export function NotificationTab({ project, userRole }: { project: any; userRole:
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium">Notice-Board Proof Upload (Photo / Doc)</span>
               <div className="flex items-center gap-2">
-                <input type="file" name="noticeBoardProof" className="text-xs text-ink-muted file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white" />
+                <FileInput
+                  name="noticeBoardProof"
+                  inputClassName="text-xs text-ink-muted file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-brand file:text-white"
+                />
               </div>
             </label>
           </div>

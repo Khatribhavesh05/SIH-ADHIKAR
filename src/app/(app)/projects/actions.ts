@@ -128,7 +128,7 @@ export async function updateSIAData(projectId: string, formData: FormData) {
 
   await prisma.project.update({
     where: { id: projectId },
-    data: { currentStage: "STAGE_2_SIA" },
+    data: { currentStage: "STAGE_3_EXPERT_APPRAISAL" },
   });
 
   revalidatePath(`/projects/${projectId}`);
