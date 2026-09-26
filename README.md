@@ -39,11 +39,11 @@ flowchart LR
     F --> H
     G --> H
 
-    style A fill:#fde2e2,stroke:#c0392b
-    style B fill:#fde2e2,stroke:#c0392b
-    style C fill:#fde2e2,stroke:#c0392b
-    style D fill:#fde2e2,stroke:#c0392b
-    style H fill:#c0392b,color:#fff
+    style A fill:#c0392b,color:#fff,stroke:#e74c3c
+    style B fill:#c0392b,color:#fff,stroke:#e74c3c
+    style C fill:#c0392b,color:#fff,stroke:#e74c3c
+    style D fill:#c0392b,color:#fff,stroke:#e74c3c
+    style H fill:#7b241c,color:#fff,stroke:#e74c3c
 ```
 
 > **35% of stalled highway projects** were delayed due to land acquisition disputes
